@@ -1,0 +1,30 @@
+# Локальные зависимости и результаты сборки
+node_modules/
+.next/
+dist/
+coverage/
+
+# Секреты и локальные настройки
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Локальные пользовательские данные
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+**/backend/uploads/*
+!**/backend/uploads/.gitkeep
+
+# Переносимый Node.js и архивы передачи проекта
+**/tools/node-*/
+**/node-v*-win-x64.zip
+project-drive-handoff-v2.zip
+
+# Служебные файлы
+*.log
+.DS_Store
+Thumbs.db

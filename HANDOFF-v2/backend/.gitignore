@@ -1,0 +1,6 @@
+projectdrive.db
+projectdrive.db-*
+uploads/*
+!uploads/.gitkeep
+node_modules/
+.env

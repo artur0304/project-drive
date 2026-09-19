@@ -1,0 +1,7 @@
+.projectActions{display:flex;gap:8px}
+.garageProject>header .renameButton{border-color:#353b45;background:#1a1e25;color:#a3a7ae}
+.renameForm{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.renameForm input{min-width:0;width:220px;padding:8px 10px;border:1px solid #454c57;border-radius:7px;background:#0f1217;color:#f1eee8;font:700 16px/1 'Space Grotesk',sans-serif;outline:none}
+.renameForm input:focus{border-color:#e5533b}
+.garageProject>header .renameForm button{padding:8px 10px;border-color:#353b45;background:#1a1e25;color:#f1eee8;font-size:10px}
+@media(max-width:760px){.projectActions{grid-column:1/-1}.projectActions button{flex:1}.renameForm{flex-wrap:wrap}.renameForm input{width:100%}}

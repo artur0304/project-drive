@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Project Drive — scroll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---- scroll-craft-инспирированная база ----
+   6 ролей цвета + 1 акцент, без чистого чёрного, вторичный текст подкрашен,
+   2 семейства шрифтов, трекинг сжимается с ростом кегля, глубина через тень/свет/зерно. */
+:root{
+  --bg:#0C0E13;            /* фон — почти чёрный, но с синевой, НЕ #000 */
+  --bg-2:#12151B;
+  --surface:#171B22;
+  --line:#242A33;
+  --ink:#F1EEE8;           /* основной текст — тёплый off-white */
+  --ink-2:#8B93A0;         /* вторичный — подкрашен в холод, не плоский серый */
+  --ink-3:#565E6B;
+  --accent:#E5533B;        /* один акцент — «тормозной» тёпло-красный (не латунь, не фиолетовый) */
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:-0.02em;line-height:1.0;}
+::selection{background:rgba(229,83,59,.28);}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+
+/* зерно (глубина) */
+body::after{content:"";position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
+@media(max-width:640px){.wrap{padding:0 20px;}}
+
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:20px 32px;padding-top:calc(20px + env(safe-area-inset-top,0px));
+  backdrop-filter:blur(10px);background:linear-gradient(180deg,rgba(12,14,19,.8),transparent);}
+.logo{font-family:'Space Grotesk';font-weight:700;font-size:17px;letter-spacing:.01em;display:flex;align-items:center;gap:9px;}
+.logo svg{width:20px;height:20px;}
+.nav-cta{font-size:13.5px;font-weight:600;padding:9px 16px;border:1px solid var(--line);border-radius:8px;transition:.15s;}
+.nav-cta:hover{border-color:var(--ink-2);}
+
+/* ---- SIGNATURE: закреплённый герой, машина меняется от скролла ---- */
+.hero{height:340vh;position:relative;}     /* высокий блок = «время» для прокрутки */
+.pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;}
+.pin::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 50% at 50% 46%, #1B2028 0%, #0A0C10 70%);}
+/* «свет сверху» на сцене (edge light как глубина) */
+.pin::after{content:"";position:absolute;left:50%;top:-10%;width:70%;height:60%;transform:translateX(-50%);
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.06), transparent 70%);pointer-events:none;}
+
+.stage-car{position:relative;z-index:2;width:min(88vw,880px);}
+.stage-car svg{width:100%;height:auto;display:block;filter:drop-shadow(0 40px 46px rgba(0,0,0,.6));}
+.floor{position:absolute;bottom:16%;left:50%;transform:translateX(-50%);width:60%;height:2px;z-index:1;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);}
+
+/* тексты, которые сменяются по мере прокрутки */
+.headwrap{position:absolute;z-index:3;top:16%;left:0;right:0;text-align:center;padding:0 24px;pointer-events:none;}
+.headline{font-size:clamp(30px,6vw,68px);}
+.headline .accent{color:var(--accent);}
+.sub{color:var(--ink-2);font-size:clamp(14px,1.8vw,17px);margin-top:16px;max-width:44ch;margin-left:auto;margin-right:auto;}
+.stagecap{position:absolute;bottom:9%;left:50%;transform:translateX(-50%);z-index:3;
+  font-family:'Space Grotesk';font-size:12.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase;white-space:nowrap;}
+
+/* прогресс-риска сбоку (не «scroll down» стрелка) */
+.rail{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:10px;}
+.rail i{width:2px;height:26px;background:var(--line);border-radius:2px;transition:.3s;}
+.rail i.on{background:var(--accent);}
+@media(max-width:640px){.rail{display:none;}}
+
+/* CTA, всплывающая в конце героя */
+.hero-cta{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);z-index:4;opacity:0;transition:opacity .4s;}
+.hero-cta.show{opacity:1;}
+.btn-accent{background:var(--accent);color:#180a06;font-weight:700;font-size:15px;padding:14px 28px;border:none;border-radius:10px;transition:.15s;}
+.btn-accent:hover{filter:brightness(1.08);transform:translateY(-1px);}
+
+/* ---- вторая секция: спокойная, документальная (без сеток карточек) ---- */
+.read{padding:14vh 0;border-top:1px solid var(--line);background:var(--bg);}
+.read .lead{font-family:'Space Grotesk';font-weight:600;font-size:clamp(22px,3.4vw,34px);max-width:20ch;line-height:1.12;}
+.read .body{color:var(--ink-2);font-size:17px;line-height:1.65;max-width:60ch;margin-top:28px;}
+.read .body b{color:var(--ink);font-weight:600;}
+
+/* закрытие — строка бегущего текста + одна кнопка */
+.close{padding:18vh 0 22vh;text-align:center;}
+.close .run{font-family:'Space Grotesk';font-weight:600;font-size:clamp(24px,4vw,44px);line-height:1.15;max-width:24ch;margin:0 auto;}
+.close .run .accent{color:var(--accent);}
+.close .btn-accent{margin-top:34px;}
+footer{border-top:1px solid var(--line);padding:26px 0 calc(30px + env(safe-area-inset-bottom,0px));color:var(--ink-3);font-size:12.5px;display:flex;justify-content:space-between;}
+
+@media (prefers-reduced-motion: reduce){.hero{height:auto;}.pin{position:relative;height:100svh;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M3 15l2.4-6C6 7.6 7.2 7 8.6 7h6.8c1.4 0 2.6.6 3.2 2l2.4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="15.5" r="2.2" stroke="var(--accent)" stroke-width="1.5"/><circle cx="17" cy="15.5" r="2.2" stroke="var(--accent)" stroke-width="1.5"/></svg>
+    Project Drive
+  </div>
+  <a class="nav-cta" href="/upload" target="_top">Upload your car</a>
+</nav>
+
+<div class="rail" id="rail"><i></i><i></i><i></i><i></i></div>
+
+<!-- SIGNATURE MOVE: скролл трансформирует машину -->
+<section class="hero" id="hero">
+  <div class="pin">
+    <div class="headwrap">
+      <h1 class="headline" id="headline">This is <span class="accent">your</span> car.</h1>
+      <p class="sub" id="sub">Scroll to see it change — the same photo, restyled.</p>
+    </div>
+
+    <div class="stage-car"><svg id="car" viewBox="0 0 800 300"></svg></div>
+    <div class="floor"></div>
+    <div class="stagecap" id="cap">STOCK · AS UPLOADED</div>
+
+    <div class="hero-cta" id="heroCta"><button class="btn-accent" onclick="window.top.location.href='/upload'">Upload your car</button></div>
+  </div>
+</section>
+
+<!-- спокойная секция -->
+<section class="read">
+  <div class="wrap">
+    <div class="lead">You just watched a car change without a single coat of paint.</div>
+    <div class="body">
+      That is the whole idea. You upload one photo of your own car, and try a <b>wrap colour</b>, a <b>window tint</b>, or a <b>set of wheels</b> on it — in seconds, on the real thing, not a showroom model. When a look is right, you already know it before you spend anything at the shop.
+    </div>
+  </div>
+</section>
+
+<!-- закрытие -->
+<section class="close">
+  <div class="wrap">
+    <div class="run">See the build <span class="accent">on your car</span>, then decide.</div>
+    <button class="btn-accent" onclick="window.top.location.href='/upload'">Upload your car</button>
+  </div>
+</section>
+
+<footer class="wrap" style="max-width:1200px;">
+  <span class="logo" style="font-size:14px;">Project Drive</span>
+  <span>Preview build · placeholder name</span>
+</footer>
+
+<script>
+/* ---------- машина ---------- */
+function hexToRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgbToHex(r,g,b){return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function lerpHex(a,b,t){const A=hexToRgb(a),B=hexToRgb(b);return rgbToHex(A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t);}
+function shade(h,a){const[r,g,b]=hexToRgb(h);return rgbToHex(r+a,g+a,b+a);}
+
+function carSVG(body,wheel,tint){
+  const glass = lerpHex('#2A333C','#10151A',tint);
+  return `<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${shade(body,42)}"/><stop offset="55%" stop-color="${body}"/><stop offset="100%" stop-color="${shade(body,-52)}"/></linearGradient></defs>
+  <path d="M92 206 C97 165 140 142 198 138 L252 104 C266 95 288 90 310 90 L470 90 C500 90 524 98 543 116 L598 150 C656 154 700 170 710 202 L712 210 L694 210 C694 191 677 178 656 178 C635 178 618 191 618 210 L282 210 C282 191 265 178 244 178 C223 178 206 191 206 210 L94 210 Z" fill="url(#b)" stroke="${shade(body,-70)}" stroke-width="2"/>
+  <path d="M260 138 L292 108 C302 99 316 94 330 94 L452 94 C470 94 486 100 498 112 L527 138 Z" fill="${glass}" stroke="${shade(body,-70)}" stroke-width="1.5"/>
+  <ellipse cx="104" cy="176" rx="9" ry="6" fill="#F4E7C9" opacity=".9"/><rect x="696" y="170" width="13" height="7" rx="2" fill="#7A1414"/>
+  ${wh(244,wheel)}${wh(656,wheel)}`;
+}
+function wh(cx,c){return `<circle cx="${cx}" cy="210" r="40" fill="#0C0E12"/><circle cx="${cx}" cy="210" r="24" fill="${c}"/>
+  <g stroke="${shade(c,-46)}" stroke-width="2.4"><line x1="${cx}" y1="188" x2="${cx}" y2="232"/><line x1="${cx-22}" y1="210" x2="${cx+22}" y2="210"/><line x1="${cx-15}" y1="195" x2="${cx+15}" y2="225"/><line x1="${cx+15}" y1="195" x2="${cx-15}" y2="225"/></g>
+  <circle cx="${cx}" cy="210" r="6" fill="#0C0E12"/>`;}
+
+/* ключевые кадры трансформации (0 -> 1 по скроллу) */
+const KF=[
+  {p:0.00, body:'#B9BCC1', wheel:'#B9BCC1', tint:0, head:'This is <span class="accent">your</span> car.',        sub:'Scroll to see it change — the same photo, restyled.', cap:'STOCK · AS UPLOADED'},
+  {p:0.34, body:'#141414', wheel:'#B9BCC1', tint:0.2, head:'Change the <span class="accent">wrap.</span>',          sub:'Gloss, satin, matte — any colour on your real car.',   cap:'WRAP · JET BLACK'},
+  {p:0.67, body:'#141414', wheel:'#1A1A1A', tint:0.6, head:'Swap the <span class="accent">wheels.</span>',          sub:'Thousands of real wheels, fitted to your car.',        cap:'WHEELS · GLOSS BLACK · TINT'},
+  {p:1.00, body:'#33463A', wheel:'#1A1A1A', tint:0.85, head:'Now it is <span class="accent">yours.</span>',         sub:'Racing green, satin. Seen before a cent is spent.',    cap:'FINISHED · RACING GREEN SATIN'},
+];
+function stateAt(p){
+  let a=KF[0],b=KF[KF.length-1];
+  for(let i=0;i<KF.length-1;i++){if(p>=KF[i].p&&p<=KF[i+1].p){a=KF[i];b=KF[i+1];break;}}
+  const span=(b.p-a.p)||1;const t=Math.max(0,Math.min(1,(p-a.p)/span));
+  return {body:lerpHex(a.body,b.body,t),wheel:lerpHex(a.wheel,b.wheel,t),tint:a.tint+(b.tint-a.tint)*t,kf:t<0.5?a:b};
+}
+
+const carEl=document.getElementById('car'),headEl=document.getElementById('headline'),subEl=document.getElementById('sub'),capEl=document.getElementById('cap');
+const rail=document.getElementById('rail').children, heroCta=document.getElementById('heroCta'), hero=document.getElementById('hero');
+let lastKf=null;
+function render(p){
+  const s=stateAt(p);
+  carEl.innerHTML=carSVG(s.body,s.wheel,s.tint);
+  if(s.kf!==lastKf){headEl.innerHTML=s.kf.head;subEl.textContent=s.kf.sub;capEl.textContent=s.kf.cap;lastKf=s.kf;}
+  const idx=Math.min(3,Math.floor(p*4+0.0001));
+  for(let i=0;i<rail.length;i++)rail[i].classList.toggle('on',i<=idx);
+  heroCta.classList.toggle('show', p>0.9);
+}
+function onScroll(){
+  const rect=hero.getBoundingClientRect();
+  const total=hero.offsetHeight-window.innerHeight;
+  const p=Math.max(0,Math.min(1,(-rect.top)/total));
+  render(p);
+}
+let ticking=false;
+window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(()=>{onScroll();ticking=false;});ticking=true;}});
+window.addEventListener('resize',onScroll);
+render(0);onScroll();
+</script>
+</body>
+</html>

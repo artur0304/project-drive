@@ -1,0 +1,33 @@
+{
+  "purpose": "Matched multi-provider comparison; no API runs performed",
+  "cases": [
+    {
+      "id": "photo-2",
+      "input": "inputs/photo-2.jpg",
+      "wheelReference": "inputs/photo-1.jpg",
+      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
+      "status": "awaiting_provider_access"
+    },
+    {
+      "id": "photo-3",
+      "input": "inputs/photo-3.jpg",
+      "wheelReference": "inputs/photo-1.jpg",
+      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome. Edit the foreground BMW sedan only; leave the white SUV unchanged.",
+      "status": "awaiting_provider_access"
+    },
+    {
+      "id": "photo-4",
+      "input": "inputs/photo-4.jpg",
+      "wheelReference": "inputs/photo-1.jpg",
+      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
+      "status": "awaiting_provider_access"
+    },
+    {
+      "id": "photo-5",
+      "input": "inputs/photo-5.jpg",
+      "wheelReference": "inputs/photo-1.jpg",
+      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
+      "status": "awaiting_provider_access"
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Project Drive — Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C0E13;--bg-2:#12151B;--panel:#171B22;--panel-2:#1E232B;
+  --line:#242A33;--line-2:#2E353F;
+  --text:#F1EEE8;--text-2:#9A9EA5;--text-3:#5E636A;
+  --accent:#E5533B;--accent-2:#F0664C;--accent-soft:rgba(229,83,59,.12);--accent-line:rgba(227,183,94,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;}}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;cursor:pointer;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
+::selection{background:rgba(229,83,59,.28);}
+
+.app{display:grid;grid-template-columns:1fr 400px;height:100vh;}
+
+/* ---- left: stage ---- */
+.stage{position:relative;display:flex;flex-direction:column;
+  background:radial-gradient(75% 60% at 50% 40%, #1D2025 0%, #0D0E10 72%);}
+.stage-top{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;}
+.crumb{font-size:14px;color:var(--text-2);}
+.crumb b{color:var(--text);font-weight:700;}
+.stage-tools{display:flex;gap:8px;}
+.icard{width:38px;height:38px;border-radius:9px;background:var(--panel);border:1px solid var(--line);color:var(--text-2);display:flex;align-items:center;justify-content:center;transition:.15s;}
+.icard:hover{color:var(--text);border-color:var(--line-2);}
+.icard svg{width:18px;height:18px;}
+.car-hold{flex:1;display:flex;align-items:center;justify-content:center;padding:0 50px 20px;}
+.car-hold svg{width:100%;max-width:760px;height:auto;filter:drop-shadow(0 32px 40px rgba(0,0,0,.5));}
+.stage-bottom{display:flex;justify-content:center;gap:8px;padding:16px 0 26px;}
+.dot{width:7px;height:7px;border-radius:99px;background:var(--line-2);}
+.dot.on{background:var(--accent);width:22px;}
+
+/* ---- right: panel ---- */
+.panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;height:100vh;}
+.panel-top{padding:18px 20px 16px;border-bottom:1px solid var(--line);}
+.brandline{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;}
+.brand svg{width:19px;height:19px;}
+.credits{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;}
+.credits svg{width:13px;height:13px;color:var(--accent);}
+
+.tabs{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:4px;}
+.tab{flex:1;text-align:center;padding:9px 6px;border-radius:99px;font-size:12.5px;font-weight:600;color:var(--text-2);border:none;background:none;transition:.15s;white-space:nowrap;}
+.tab.on{background:var(--panel-2);color:var(--text);}
+
+.body{flex:1;overflow-y:auto;padding:20px;}
+.body::-webkit-scrollbar{width:6px;}.body::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px;}
+.lbl{font-size:12px;color:var(--text-3);font-weight:600;margin-bottom:12px;}
+.lbl.mt{margin-top:24px;}
+
+.sw-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+.sw{aspect-ratio:1;border-radius:8px;border:2px solid var(--line);position:relative;transition:.12s;padding:0;}
+.sw:hover{transform:scale(1.06);}
+.sw.on{border-color:var(--accent);}
+.sw.on::after{content:'';position:absolute;inset:-5px;border:1px solid var(--accent-line);border-radius:11px;}
+
+.fin-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+.fin{padding:9px 4px;border-radius:8px;border:1px solid var(--line);background:var(--bg-2);color:var(--text-2);font-size:11.5px;font-weight:600;transition:.15s;}
+.fin:hover{color:var(--text);border-color:var(--line-2);}
+.fin.on{border-color:var(--accent);background:var(--accent-soft);color:var(--text);}
+
+.tint{display:flex;align-items:center;gap:13px;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--bg-2);margin-bottom:9px;width:100%;text-align:left;transition:.15s;}
+.tint:hover{border-color:var(--line-2);}
+.tint.on{border-color:var(--accent);background:var(--accent-soft);}
+.tint .chip{width:42px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.08);flex:none;}
+.tint b{font-size:13.5px;display:block;color:var(--text);}
+.tint span{font-size:12px;color:var(--text-3);}
+
+.wh-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.wh{background:var(--bg-2);border:1px solid var(--line);border-radius:11px;padding:13px;text-align:center;transition:.15s;position:relative;}
+.wh:hover{border-color:var(--line-2);}
+.wh.on{border-color:var(--accent);background:var(--accent-soft);}
+.wh svg{width:64px;height:64px;margin:0 auto 8px;display:block;}
+.wh b{font-size:12.5px;display:block;color:var(--text);line-height:1.3;}
+.wh span{font-size:11px;color:var(--text-3);}
+
+/* foot */
+.foot{border-top:1px solid var(--line);padding:16px 20px 20px;}
+.sel{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.sel .box{width:40px;height:40px;border-radius:9px;border:1px solid var(--line);flex:none;}
+.sel b{font-size:13.5px;display:block;}
+.sel span{font-size:12px;color:var(--text-3);}
+.gen-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.cost{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:6px;}
+.cost b{color:var(--text);}
+.cost svg{width:13px;height:13px;color:var(--accent);}
+.gen{background:var(--accent);color:#180A06;border:none;border-radius:9px;padding:12px 26px;font-weight:700;font-size:14px;transition:.15s;}
+.gen:hover{background:var(--accent-2);}
+
+/* responsive note */
+@media (max-width:900px){
+  body{overflow:auto;}
+  .app{grid-template-columns:1fr;height:auto;}
+  .stage{height:52vh;}
+  .panel{height:auto;border-left:none;border-top:1px solid var(--line);}
+}
+h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT: car stage -->
+  <div class="stage">
+    <div class="stage-top">
+      <div class="crumb"><b>BMW M4 Competition</b> · original photo</div>
+      <div class="stage-tools">
+        <button class="icard" title="Undo"><svg viewBox="0 0 24 24" fill="none"><path d="M9 14L4 9l5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h11a5 5 0 015 5v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <button class="icard" title="Fullscreen"><svg viewBox="0 0 24 24" fill="none"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+    <div class="car-hold"><svg id="car" viewBox="0 0 800 300"></svg></div>
+    <div class="stage-bottom"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+  </div>
+
+  <!-- RIGHT: config panel -->
+  <div class="panel">
+    <div class="panel-top">
+      <div class="brandline">
+        <div class="brand">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 15l2.4-6C6 7.6 7.2 7 8.6 7h6.8c1.4 0 2.6.6 3.2 2l2.4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="15.5" r="2.2" stroke="var(--accent)" stroke-width="1.5"/><circle cx="17" cy="15.5" r="2.2" stroke="var(--accent)" stroke-width="1.5"/></svg>
+          Project Drive
+        </div>
+        <div class="credits"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg>103</div>
+      </div>
+      <div class="tabs">
+        <button class="tab on" data-tab="wrap">Wrap</button>
+        <button class="tab" data-tab="tint">Tint</button>
+        <button class="tab" data-tab="wheels">Wheels</button>
+        <button class="tab" data-tab="wcolor">Wheel color</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- WRAP -->
+      <div class="pane" id="p-wrap">
+        <div class="lbl">Color</div>
+        <div class="sw-grid" id="wrap-sw"></div>
+        <div class="lbl mt">Finish</div>
+        <div class="fin-grid" id="fin"></div>
+      </div>
+      <!-- TINT -->
+      <div class="pane" id="p-tint" hidden>
+        <div class="lbl">Window tint</div>
+        <div id="tint-list"></div>
+      </div>
+      <!-- WHEELS -->
+      <div class="pane" id="p-wheels" hidden>
+        <div class="lbl">Popular wheels</div>
+        <div class="wh-grid" id="wh-grid"></div>
+      </div>
+      <!-- WHEEL COLOR -->
+      <div class="pane" id="p-wcolor" hidden>
+        <div class="lbl">Recolor current wheels</div>
+        <div class="sw-grid" id="wc-sw"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div style="font-size:11.5px;color:var(--text-3);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px;flex:none;"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v5M12 16v.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        You'll see it on your car after you press Generate
+      </div>
+
+      <!-- список выбранных изменений с ценой каждой строки -->
+      <div id="op-list" style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px;"></div>
+
+      <div class="gen-row" style="border-top:1px solid var(--line);padding-top:14px;">
+        <div class="cost" style="font-size:14px;">Total <b id="cost-num" style="margin-left:6px;">25</b> credits</div>
+        <button class="gen" onclick="fakeGen(this)">Generate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function lighten(h,a){const n=parseInt(h.slice(1),16);let r=(n>>16)+a*2.4,g=((n>>8)&255)+a*2.4,b=(n&255)+a*2.4;return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function darken(h,a){return lighten(h,-a);}
+
+let body='#161616', wheelCol='#3A3D42', tinted=false;
+
+function carSVG(){
+  const glass = tinted ? '#12171B' : '#2A333C';
+  return `
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lighten(body,20)}"/><stop offset="55%" stop-color="${body}"/><stop offset="100%" stop-color="${darken(body,24)}"/></linearGradient>
+    <radialGradient id="gr" cx="50%" cy="100%" r="60%"><stop offset="0%" stop-color="#000" stop-opacity=".4"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
+  </defs>
+  <ellipse cx="400" cy="262" rx="300" ry="16" fill="url(#gr)"/>
+  <path d="M92 206 C97 165 140 142 198 138 L252 104 C266 95 288 90 310 90 L470 90 C500 90 524 98 543 116 L598 150 C656 154 700 170 710 202 L712 210 L694 210 C694 191 677 178 656 178 C635 178 618 191 618 210 L282 210 C282 191 265 178 244 178 C223 178 206 191 206 210 L94 210 Z" fill="url(#bg)" stroke="${darken(body,38)}" stroke-width="2"/>
+  <path d="M260 138 L292 108 C302 99 316 94 330 94 L452 94 C470 94 486 100 498 112 L527 138 Z" fill="${glass}" stroke="${darken(body,38)}" stroke-width="1.5"/>
+  <path d="M332 94 L338 138 M452 94 L461 138" stroke="${darken(body,32)}" stroke-width="2"/>
+  <ellipse cx="104" cy="176" rx="9" ry="6" fill="#F4E7C9" opacity=".9"/><rect x="696" y="170" width="13" height="7" rx="2" fill="#7A1414"/>
+  ${wheel(244)}${wheel(656)}`;
+}
+function wheel(cx){return `<circle cx="${cx}" cy="210" r="40" fill="#0F1113"/><circle cx="${cx}" cy="210" r="40" fill="none" stroke="#000" stroke-width="2"/><circle cx="${cx}" cy="210" r="24" fill="${wheelCol}"/><g stroke="${darken(wheelCol,22)}" stroke-width="2.4"><line x1="${cx}" y1="190" x2="${cx}" y2="230"/><line x1="${cx-20}" y1="210" x2="${cx+20}" y2="210"/><line x1="${cx-14}" y1="196" x2="${cx+14}" y2="224"/><line x1="${cx+14}" y1="196" x2="${cx-14}" y2="224"/></g><circle cx="${cx}" cy="210" r="6" fill="#0C0E13"/>`;}
+function draw(){document.getElementById('car').innerHTML=carSVG();}
+
+// data
+const colors=[['Jet Black','#161616'],['Alpine White','#D9D2C4'],['Racing Green','#3E5B44'],['Ember Red','#9C2B2B'],['Deep Navy','#232C3D'],['Stealth Grey','#54565C'],['Bronze','#8A5A2E'],['Champagne','#C7B389'],['Slate Blue','#3A4B5C'],['Graphite','#3A3C40'],['Copper','#A9662F'],['Titanium','#7A7D82']];
+const finishes=['Gloss','Satin','Matte','Metallic','Pearl'];
+const tints=[['No tint','Clear glass','#2A333C',false],['Light','~50% light','#222A31',true],['Medium','~35% light','#1B2228',true],['Limo','~20% light','#141A1F',true],['Black-out','~5% light','#0C1013',true]];
+const wheels=[['BMW 437M','R20 · Ferric','#9A9C9F'],['Vossen HF-3','R21 · Black','#161616'],['BBS CH-R','R19 · Titanium','#8B8D92'],['Rotiform TMB','R19 · Bronze','#8A5A2E']];
+
+let finish='Gloss';
+// applied* = то, что РЕАЛЬНО нарисовано на машине (меняется только после Generate)
+// draft*   = то, что человек выбрал сейчас (до Generate машину НЕ трогает)
+let dBody=body, dWheel=wheelCol, dTinted=tinted;
+
+// ---------------------------------------------------------------------------
+// ЦЕНЫ ОПЕРАЦИЙ В КРЕДИТАХ.
+// ВНИМАНИЕ: числа УСЛОВНЫЕ (заглушки)! Настоящую цену поставим ПОЗЖЕ,
+// после теста генерации, когда узнаем реальную стоимость одного рендера.
+// Менять только здесь:
+const PRICE = { wrap: 25, tint: 10, wheel_replace: 20, wheel_recolor: 10 };
+const BALANCE = 103; // условный баланс кредитов пользователя (потом придёт из аккаунта)
+
+// Какие операции сейчас выбраны (это и есть "черновик"). Ключ -> {label, cost}.
+// Ключ 'wheel' общий для замены и перекраса дисков (одно другое заменяет).
+const ops = {};
+
+let wrapColorName = 'Jet Black';   // помним имя выбранного цвета (для подписи плёнки)
+
+// пересчёт: рисуем список выбранного с ценой каждой строки + общий итог
+function recalcCost(){
+  const entries = Object.values(ops);
+  const total = entries.reduce((s,o)=>s+o.cost,0);
+  const list = document.getElementById('op-list');
+  list.innerHTML = entries.length===0
+    ? '<span style="color:var(--text-3);font-size:12.5px;">No changes selected</span>'
+    : entries.map(o=>`<div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span style="color:var(--text-2);">${o.label}</span>
+        <span style="color:var(--text);font-weight:600;">${o.cost} cr</span></div>`).join('');
+  const num = document.getElementById('cost-num');
+  num.textContent = total;
+  const g = document.querySelector('.gen');
+  if(total > BALANCE){            // не хватает кредитов
+    num.style.color = '#E5533B';
+    g.textContent = 'Not enough credits';
+    g.disabled = true;
+  } else {
+    num.style.color = '';
+    if(g.textContent === 'Not enough credits') g.textContent = 'Generate';
+    g.disabled = false;
+  }
+}
+
+// wrap swatches
+const wrapSw=document.getElementById('wrap-sw');
+colors.forEach((c,i)=>{const b=document.createElement('button');b.className='sw'+(i===0?' on':'');b.style.background=c[1];b.title=c[0];b.onclick=()=>{dBody=c[1];wrapColorName=c[0];[...wrapSw.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');ops.wrap={label:c[0]+' · '+finish,cost:PRICE.wrap};recalcCost();};wrapSw.appendChild(b);});
+// finishes
+const finEl=document.getElementById('fin');
+finishes.forEach((f,i)=>{const b=document.createElement('button');b.className='fin'+(i===0?' on':'');b.textContent=f;b.onclick=()=>{finish=f;[...finEl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');if(ops.wrap)ops.wrap.label=wrapColorName+' · '+f;recalcCost();};finEl.appendChild(b);});
+// tint
+const tl=document.getElementById('tint-list');
+tints.forEach((t,i)=>{const b=document.createElement('button');b.className='tint'+(i===0?' on':'');b.innerHTML=`<span class="chip" style="background:${t[2]}"></span><span><b>${t[0]}</b><span>${t[1]}</span></span>`;b.onclick=()=>{dTinted=t[3];[...tl.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');if(t[3]){ops.tint={label:t[0]+' tint',cost:PRICE.tint};}else{delete ops.tint;}recalcCost();};tl.appendChild(b);});
+// wheels
+const wg=document.getElementById('wh-grid');
+wheels.forEach((w,i)=>{const b=document.createElement('button');b.className='wh';b.innerHTML=`${whIcon(w[2])}<b>${w[0]}</b><span>${w[1]}</span>`;b.onclick=()=>{dWheel=w[2];[...wg.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');ops.wheel={label:w[0],cost:PRICE.wheel_replace};recalcCost();};wg.appendChild(b);});
+function whIcon(col){return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#0F1113" stroke="#000" stroke-width="2"/><circle cx="50" cy="50" r="30" fill="${col}"/><g stroke="${darken(col,20)}" stroke-width="3"><line x1="50" y1="22" x2="50" y2="78"/><line x1="22" y1="50" x2="78" y2="50"/><line x1="30" y1="30" x2="70" y2="70"/><line x1="70" y1="30" x2="30" y2="70"/></g><circle cx="50" cy="50" r="8" fill="#0C0E13"/></svg>`;}
+// wheel color
+const wc=document.getElementById('wc-sw');
+[['Silver','#9A9C9F'],['Black','#161616'],['Bronze','#8A5A2E'],['Gunmetal','#42454A'],['Gold','#C7A24E'],['White','#D9D2C4']].forEach((c,i)=>{const b=document.createElement('button');b.className='sw';b.style.background=c[1];b.title=c[0];b.onclick=()=>{dWheel=c[1];[...wc.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');ops.wheel={label:c[0]+' wheels',cost:PRICE.wheel_recolor};recalcCost();};wc.appendChild(b);});
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>{t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.querySelectorAll('.pane').forEach(p=>p.hidden=true);document.getElementById('p-'+t.dataset.tab).hidden=false;};});
+
+function fakeGen(btn){btn.textContent='Generating…';btn.disabled=true;setTimeout(()=>{
+  // ТОЛЬКО ЗДЕСЬ машина реально меняется — после нажатия Generate
+  body=dBody;wheelCol=dWheel;tinted=dTinted;draw();
+  btn.textContent='Generate';btn.disabled=false;
+},1400);}
+
+// стартовое состояние: по умолчанию выбран цвет+плёнка, считаем цену
+ops.wrap={label:'Jet Black · Gloss',cost:PRICE.wrap};
+recalcCost();
+draw();
+</script>
+</body>
+</html>

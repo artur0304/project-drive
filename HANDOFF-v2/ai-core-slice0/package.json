@@ -1,0 +1,15 @@
+{
+  "name": "project-drive-slice0",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Slice 0 AI core: provider layer + orchestrator + bake-off harness",
+  "type": "commonjs",
+  "scripts": {
+    "bakeoff:demo": "ts-node src/bakeoff/runBakeoff.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.0"
+  }
+}
