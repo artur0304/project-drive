@@ -1,0 +1,11 @@
+{
+  "name": "project-drive",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix HANDOFF-v2/backend install && npm --prefix HANDOFF-v2/web install",
+    "dev:backend": "node --experimental-sqlite HANDOFF-v2/backend/server.mjs",
+    "dev:web": "npm --prefix HANDOFF-v2/web run dev",
+    "build:web": "npm --prefix HANDOFF-v2/web run build"
+  }
+}
