@@ -1,0 +1,44 @@
+name: Verify Project Drive
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            HANDOFF-v2/backend/package-lock.json
+            HANDOFF-v2/web/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --prefix HANDOFF-v2/backend
+
+      - name: Install web dependencies
+        run: npm ci --prefix HANDOFF-v2/web
+
+      - name: Run backend and frontend tests
+        run: npm test
+
+      - name: Build Next.js application
+        run: npm run build:web
+

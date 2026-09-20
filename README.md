@@ -1,5 +1,7 @@
 # Project Drive
 
+[![Verify Project Drive](https://github.com/artur0304/project-drive/actions/workflows/ci.yml/badge.svg)](https://github.com/artur0304/project-drive/actions/workflows/ci.yml)
+
 Project Drive — рабочий прототип сервиса, который позволяет загрузить фотографию
 автомобиля и подготовить изменения плёнки, тонировки и дисков.
 
@@ -67,6 +69,10 @@ Production-проверка frontend:
 ```bash
 npm run build:web
 ```
+
+GitHub Actions повторяет установку по lock-файлам, все тесты и production-сборку
+при каждом push и pull request в `main`. Workflow не получает API-ключи и не
+запускает реальную AI-генерацию.
 
 Все локальные тесты:
 
