@@ -16,6 +16,51 @@
 // а сколько это стоит — решает сервер (иначе можно было бы обмануть цену).
 export const PRICE = { wrap: 25, tint: 10, wheel_replace: 20, wheel_recolor: 10 };
 
+function cleanText(value, maxLength) {
+  const text = typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+  return text && text.length <= maxLength ? text : null;
+}
+
+// Проверяем и одновременно очищаем данные клиента. В один Generate допустимы
+// максимум плёнка, тонировка и одна операция с дисками.
+export function validateOperations(operations) {
+  if (!Array.isArray(operations) || operations.length === 0)
+    return { ok: false, error: 'нечего генерировать' };
+  if (operations.length > 3)
+    return { ok: false, error: 'слишком много операций' };
+
+  const groups = new Set();
+  const normalized = [];
+  for (const raw of operations) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+      return { ok: false, error: 'операция имеет неверный формат' };
+
+    const kind = raw.kind;
+    if (!Object.hasOwn(PRICE, kind)) return { ok: false, error: `неизвестная операция: ${kind || ''}` };
+    const group = kind.startsWith('wheel_') ? 'wheel' : kind;
+    if (groups.has(group)) return { ok: false, error: `операция ${group} указана повторно` };
+    groups.add(group);
+
+    if (kind === 'wrap') {
+      const color = cleanText(raw.color, 80);
+      const finish = cleanText(raw.finish, 32);
+      if (!color || !finish) return { ok: false, error: 'для плёнки нужны цвет и покрытие' };
+      normalized.push({ kind, color, finish });
+    } else if (kind === 'tint') {
+      const name = cleanText(raw.name, 80);
+      const level = cleanText(raw.level, 20);
+      if (!name || !level) return { ok: false, error: 'для тонировки нужны название и уровень' };
+      normalized.push({ kind, name, level });
+    } else {
+      const name = cleanText(raw.name, 120);
+      const color = raw.color == null ? null : cleanText(raw.color, 32);
+      if (!name || (raw.color != null && !color)) return { ok: false, error: 'неверные параметры дисков' };
+      normalized.push({ kind, name, ...(color ? { color } : {}) });
+    }
+  }
+  return { ok: true, operations: normalized };
+}
+
 // Посчитать стоимость набора операций.
 export function costOf(operations) {
   let total = 0;
@@ -51,22 +96,25 @@ async function runProvider(args) {
 //   4) успех -> сохранить версию;  провал -> ВЕРНУТЬ кредиты (не берём за брак)
 // ============================================================================
 export async function generateForProject({ db, userId, projectId, operations, forceFail = false }) {
-  if (!Array.isArray(operations) || operations.length === 0)
-    return { ok: false, code: 400, error: 'нечего генерировать' };
+  const validation = validateOperations(operations);
+  if (!validation.ok) return { ok: false, code: 400, error: validation.error };
+  const safeOperations = validation.operations;
 
   const project = db.getProject(projectId);
   if (!project || project.user_id !== userId)
     return { ok: false, code: 404, error: 'проект не найден' };
 
-  const cost = costOf(operations);
+  const asset = db.getLatestSourceAsset(projectId);
+  if (!asset?.url) return { ok: false, code: 409, error: 'сначала загрузи фотографию машины' };
+
+  const cost = costOf(safeOperations);
 
   // 2) списываем кредиты заранее. spendCredits вернёт false, если не хватает.
   const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
   if (!paid) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
 
   // 3) берём исходное фото проекта (последнее загруженное) и зовём AI-заглушку
-  const asset = db.getLatestSourceAsset(projectId);
-  const result = await runProvider({ sourceImage: asset?.url, operations, forceFail });
+  const result = await runProvider({ sourceImage: asset.url, operations: safeOperations, forceFail });
 
   // 4a) провал -> возвращаем кредиты обратно, версию не создаём
   if (!result.ok) {
@@ -76,7 +124,7 @@ export async function generateForProject({ db, userId, projectId, operations, fo
 
   // 4b) успех -> сохраняем версию (неизменный снимок настроек + результат)
   const versionId = db.createVersion({
-    projectId, config: operations, outputUrl: result.outputImage, creditsCharged: cost,
+    projectId, config: safeOperations, outputUrl: result.outputImage, creditsCharged: cost,
   });
   return { ok: true, versionId, creditsCharged: cost, outputUrl: result.outputImage };
 }

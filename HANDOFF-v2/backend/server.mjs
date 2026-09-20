@@ -322,12 +322,12 @@ export const server = createServer(async (req, res) => {
 
     // --- ГЕНЕРАЦИЯ (главная петля продукта) ---
     // Клиент присылает ЧТО менять (operations); цену и списание кредитов решает сервер.
-    // AI пока заглушка (mock). _forceFail:true — только для проверки возврата кредитов.
+    // AI пока заглушка (mock). Тестовый forceFail намеренно недоступен через HTTP.
     if (method === 'POST' && path === '/api/generate') {
       const user = auth.checkSession(tokenFrom(req));
       if (!user) return send(res, 401, { error: 'нужен вход' });
-      const { projectId, operations, _forceFail } = await readBody(req);
-      const r = await generateForProject({ db, userId: user.id, projectId, operations, forceFail: !!_forceFail });
+      const { projectId, operations } = await readBody(req);
+      const r = await generateForProject({ db, userId: user.id, projectId, operations });
       return send(res, r.ok ? 201 : r.code, r);
     }
 
