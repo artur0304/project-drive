@@ -36,3 +36,12 @@ test('402 и обычные ошибки не завершают сессию', 
   assert.equal(getToken(), 'valid-token');
 });
 
+test('сетевая ошибка сохраняет токен и объясняет, что backend недоступен', async () => {
+  setToken('still-valid-token');
+  globalThis.fetch = async () => { throw new TypeError('fetch failed'); };
+  await assert.rejects(
+    () => apiRequest('/api/wallet'),
+    (error) => error.status === 0 && /backend is unavailable/.test(error.message),
+  );
+  assert.equal(getToken(), 'still-valid-token');
+});

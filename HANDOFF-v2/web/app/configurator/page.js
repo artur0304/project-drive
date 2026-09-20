@@ -37,6 +37,7 @@ export default function ConfiguratorPage() {
   const [authError, setAuthError] = useState('');
   const [walletBalance, setWalletBalance] = useState(null);
   const [pricing, setPricing] = useState(null);
+  const [generationError, setGenerationError] = useState('');
 
   useEffect(() => {
     let objectUrl = '';
@@ -148,6 +149,7 @@ export default function ConfiguratorPage() {
     setIsGenerating(true);
     setShowAuthGate(true);
     setAuthError('');
+    setGenerationError('');
     try {
       const projectId = await getOrCreateProject(token);
       await uploadPhotoOnce(token, projectId);
@@ -157,8 +159,14 @@ export default function ConfiguratorPage() {
       });
       router.push(`/result/${encodeURIComponent(result.versionId)}`);
     } catch (error) {
-      setAuthError(error.message || 'Could not prepare the result.');
       setIsGenerating(false);
+      if (error.status === 401) {
+        clearToken();
+        setAuthError('Your session expired. Please sign in again.');
+      } else {
+        setShowAuthGate(false);
+        setGenerationError(error.message || 'Could not prepare the result.');
+      }
     }
   }
 
@@ -172,10 +180,14 @@ export default function ConfiguratorPage() {
     try {
       await apiRequest('/api/auth/me', { token });
       await runMockGeneration(token);
-    } catch {
-      clearToken();
-      setAuthError('Your session expired. Please sign in again.');
-      setShowAuthGate(true);
+    } catch (error) {
+      if (error.status === 401) {
+        clearToken();
+        setAuthError('Your session expired. Please sign in again.');
+        setShowAuthGate(true);
+      } else {
+        setGenerationError(error.message || 'Could not reach the local backend.');
+      }
     }
   }
 
@@ -237,7 +249,7 @@ export default function ConfiguratorPage() {
           {activeTab === 'wcolor' && <WheelColorTab draft={draft} onSelect={selectWheelColor} />}
         </div>
 
-        <GenerateFooter operations={operations} total={total} pricingReady={Boolean(pricing)} isGenerating={isGenerating} onGenerate={requestGeneration} />
+        <GenerateFooter operations={operations} total={total} pricingReady={Boolean(pricing)} isGenerating={isGenerating} error={generationError} onGenerate={requestGeneration} />
       </aside>
 
       {showAuthGate && <AuthGate busy={isGenerating} error={authError} onClose={() => setShowAuthGate(false)} onSubmit={authenticateAndGenerate} />}

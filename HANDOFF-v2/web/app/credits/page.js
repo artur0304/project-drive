@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '../lib/api';
-import { clearToken, getToken } from '../lib/storage';
+import { getToken } from '../lib/storage';
 import ProductNav from '../components/product-nav';
 import './credits.css';
 
@@ -18,7 +18,7 @@ function labelForReason(reason) {
 
 export default function CreditsPage() {
   const router = useRouter();
-  const [state, setState] = useState({ status: 'loading', wallet: null, transactions: [], packs: {} });
+  const [state, setState] = useState({ status: 'loading', wallet: null, transactions: [], packs: {}, error: '' });
 
   useEffect(() => {
     const token = getToken();
@@ -30,15 +30,21 @@ export default function CreditsPage() {
       apiRequest('/api/packs', { token: '' }),
     ]).then(([wallet, transactions, packs]) => {
       setState({ status: 'ready', wallet, transactions, packs });
-    }).catch(() => {
-      clearToken();
-      setState((current) => ({ ...current, status: 'signed-out' }));
+    }).catch((error) => {
+      setState((current) => ({
+        ...current,
+        status: error.status === 401 ? 'signed-out' : 'unavailable',
+        error: error.message || 'Could not load credits.',
+      }));
     });
   }, []);
 
   if (state.status === 'loading') return <main className="creditState">Loading credits…</main>;
   if (state.status === 'signed-out') {
     return <main className="creditState"><h1>Sign in to see credits</h1><p>The local account is created when you run your first mock.</p><button onClick={() => router.push('/upload')}>Upload a car</button></main>;
+  }
+  if (state.status === 'unavailable') {
+    return <main className="creditState"><h1>Credits are temporarily unavailable</h1><p>{state.error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></main>;
   }
 
   return (

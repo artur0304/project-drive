@@ -13,11 +13,21 @@ export async function apiRequest(path, {
     ...headers,
   };
 
-  const response = await fetch(path, {
-    method,
-    headers: requestHeaders,
-    body: body == null ? undefined : isRaw ? body : JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      method,
+      headers: requestHeaders,
+      body: body == null ? undefined : isRaw ? body : JSON.stringify(body),
+    });
+  } catch (cause) {
+    // Сетевая ошибка не означает, что сессия истекла. Сохраняем токен и даём
+    // страницам отдельный, понятный статус «локальный backend недоступен».
+    const error = new Error('Project Drive backend is unavailable. Start it and try again.');
+    error.status = 0;
+    error.cause = cause;
+    throw error;
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     // 401 означает, что сервер больше не признаёт локальный пропуск. Очищаем

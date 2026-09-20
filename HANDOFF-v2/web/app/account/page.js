@@ -9,7 +9,7 @@ import './account.css';
 
 export default function AccountPage() {
   const router = useRouter();
-  const [data, setData] = useState({ status: 'loading', user: null, projects: [], wallet: null });
+  const [data, setData] = useState({ status: 'loading', user: null, projects: [], wallet: null, error: '' });
 
   useEffect(() => {
     const token = getToken();
@@ -18,8 +18,12 @@ export default function AccountPage() {
       apiRequest('/api/auth/me', { token }),
       apiRequest('/api/projects', { token }),
       apiRequest('/api/wallet', { token }),
-    ]).then(([user, projects, wallet]) => setData({ status: 'ready', user, projects, wallet }))
-      .catch(() => setData((current) => ({ ...current, status: 'signed-out' })));
+    ]).then(([user, projects, wallet]) => setData({ status: 'ready', user, projects, wallet, error: '' }))
+      .catch((error) => setData((current) => ({
+        ...current,
+        status: error.status === 401 ? 'signed-out' : 'unavailable',
+        error: error.message || 'Could not load account.',
+      })));
   }, []);
 
   async function signOut() {
@@ -31,6 +35,7 @@ export default function AccountPage() {
 
   if (data.status === 'loading') return <main className="accountState">Loading account…</main>;
   if (data.status === 'signed-out') return <main className="accountState"><h1>No active local session</h1><p>Sign in to reopen your saved garage.</p><button onClick={() => router.push('/login')}>Sign in</button></main>;
+  if (data.status === 'unavailable') return <main className="accountState"><h1>Account is temporarily unavailable</h1><p>{data.error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></main>;
 
   const initial = (data.user.name || data.user.email || 'P').slice(0, 1).toUpperCase();
   return (

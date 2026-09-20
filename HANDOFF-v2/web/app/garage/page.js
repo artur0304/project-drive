@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiRequest } from '../lib/api';
 import { draftFromOperations } from '../lib/configuration';
 import {
-  clearToken, getToken, setDraft, setProjectId, setUploadedProjectId,
+  getToken, setDraft, setProjectId, setUploadedProjectId,
 } from '../lib/storage';
 import { savePendingPhoto } from '../lib/pending-photo';
 import ProductNav from '../components/product-nav';
@@ -60,9 +60,8 @@ export default function GaragePage() {
         setStatus('ready');
       } catch (requestError) {
         if (cancelled) return;
-        clearToken();
         setError(requestError.message || 'Could not load your garage.');
-        setStatus('signed-out');
+        setStatus(requestError.status === 401 ? 'signed-out' : 'unavailable');
       }
     }
 
@@ -136,6 +135,10 @@ export default function GaragePage() {
         <button type="button" onClick={() => router.push('/upload')}>Upload your car</button>
       </main>
     );
+  }
+
+  if (status === 'unavailable') {
+    return <main className="garageState"><h1>Garage is temporarily unavailable</h1><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></main>;
   }
 
   return (

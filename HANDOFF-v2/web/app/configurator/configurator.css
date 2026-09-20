@@ -85,6 +85,7 @@
 .authSubmit { margin-top:4px; padding:12px 18px; border:0; border-radius:9px; background:var(--accent); color:#180A06; font-weight:700; cursor:pointer; }
 .authSubmit:hover { background:var(--accent-2); }
 .authError { margin:0!important; color:#FF8E7A!important; font-size:12.5px!important; line-height:1.45!important; }
+.generateError { margin:0 0 10px; color:#ff9b88; font-size:11px; line-height:1.4; }
 .generationProgress { display:grid; justify-items:center; padding:16px 0 2px; text-align:center; }
 .generationProgress p { margin-bottom:0!important; }
 .progressSpinner { width:34px; height:34px; border:3px solid var(--line-2); border-top-color:var(--accent); border-radius:50%; animation:config-spin .8s linear infinite; }
