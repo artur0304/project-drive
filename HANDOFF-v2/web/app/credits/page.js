@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+import { clearToken, getToken } from '../lib/storage';
 import './credits.css';
-
-async function getLocal(path, token) {
-  const response = await fetch(path, { headers: { Authorization: `Bearer ${token}` } });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Could not load credits.');
-  return data;
-}
 
 function labelForReason(reason) {
   if (reason === 'generate') return 'Saved mock variation';
   if (reason === 'local_demo_balance') return 'Local demo balance';
+  if (reason === 'local_seed') return 'Manual local test credit';
   if (reason?.startsWith('refund')) return 'Returned after failed mock';
   if (reason?.startsWith('purchase')) return 'Credit package';
   return reason?.replaceAll('_', ' ') || 'Balance change';
@@ -24,17 +20,17 @@ export default function CreditsPage() {
   const [state, setState] = useState({ status: 'loading', wallet: null, transactions: [], packs: {} });
 
   useEffect(() => {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     if (!token) { setState((current) => ({ ...current, status: 'signed-out' })); return; }
 
     Promise.all([
-      getLocal('/api/wallet', token),
-      getLocal('/api/wallet/transactions', token),
-      fetch('/api/packs').then((response) => response.json()),
+      apiRequest('/api/wallet', { token }),
+      apiRequest('/api/wallet/transactions', { token }),
+      apiRequest('/api/packs', { token: '' }),
     ]).then(([wallet, transactions, packs]) => {
       setState({ status: 'ready', wallet, transactions, packs });
     }).catch(() => {
-      sessionStorage.removeItem('project-drive-token');
+      clearToken();
       setState((current) => ({ ...current, status: 'signed-out' }));
     });
   }, []);

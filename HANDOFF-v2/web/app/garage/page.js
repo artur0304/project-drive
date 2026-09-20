@@ -2,50 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+import { draftFromOperations } from '../lib/configuration';
+import {
+  clearToken, getToken, setDraft, setProjectId, setUploadedProjectId,
+} from '../lib/storage';
 import { savePendingPhoto } from '../lib/pending-photo';
 import './garage.css';
 import './rename.css';
 
-// Запросы Garage всегда используют локальный пропуск из текущей вкладки.
-// Он не связан с Google: это сессия нашего учебного бэкенда на localhost.
-async function apiRequest(path, token, { method = 'GET', body } = {}) {
-  const response = await fetch(path, {
-    method,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
-  return data;
-}
-
 function draftFromConfig(configJson) {
   let operations = [];
   try { operations = JSON.parse(configJson || '[]'); } catch { return {}; }
-  const draft = {};
-
-  for (const operation of operations) {
-    if (operation.kind === 'wrap') {
-      draft.wrap = { color: operation.color, finish: operation.finish };
-    }
-    if (operation.kind === 'tint') {
-      draft.tint = { name: operation.name, level: operation.level };
-    }
-    if (operation.kind === 'wheel_replace' || operation.kind === 'wheel_recolor') {
-      draft.wheel = {
-        kind: operation.kind,
-        name: operation.name,
-        color: operation.color,
-        label: operation.kind === 'wheel_recolor'
-          ? `${operation.name} wheels`
-          : operation.name,
-      };
-    }
-  }
-  return draft;
+  return draftFromOperations(operations);
 }
 
 function readableDate(value) {
@@ -69,7 +38,7 @@ export default function GaragePage() {
     let cancelled = false;
 
     async function loadGarage() {
-      const token = sessionStorage.getItem('project-drive-token');
+      const token = getToken();
       if (!token) {
         setStatus('signed-out');
         return;
@@ -77,13 +46,13 @@ export default function GaragePage() {
 
       try {
         const [me, walletData, projectRows] = await Promise.all([
-          apiRequest('/api/auth/me', token),
-          apiRequest('/api/wallet', token),
-          apiRequest('/api/projects', token),
+          apiRequest('/api/auth/me', { token }),
+          apiRequest('/api/wallet', { token }),
+          apiRequest('/api/projects', { token }),
         ]);
         const completeProjects = await Promise.all(projectRows.map(async (project) => ({
           ...project,
-          versions: await apiRequest(`/api/versions?projectId=${encodeURIComponent(project.id)}`, token),
+          versions: await apiRequest(`/api/versions?projectId=${encodeURIComponent(project.id)}`, { token }),
         })));
         if (cancelled) return;
         setUser(me);
@@ -92,7 +61,7 @@ export default function GaragePage() {
         setStatus('ready');
       } catch (requestError) {
         if (cancelled) return;
-        sessionStorage.removeItem('project-drive-token');
+        clearToken();
         setError(requestError.message || 'Could not load your garage.');
         setStatus('signed-out');
       }
@@ -119,9 +88,9 @@ export default function GaragePage() {
       const extension = blob.type.split('/')[1] || 'jpg';
       const file = new File([blob], `${project.name}.${extension}`, { type: blob.type });
       await savePendingPhoto(file);
-      sessionStorage.setItem('project-drive-project-id', project.id);
-      sessionStorage.setItem('project-drive-uploaded-project-id', project.id);
-      if (draft) localStorage.setItem('project-drive-draft', JSON.stringify(draft));
+      setProjectId(project.id);
+      setUploadedProjectId(project.id);
+      if (draft) setDraft(draft);
       router.push('/configurator');
     } catch (openError) {
       setError(openError.message || 'Could not open this project.');
@@ -129,18 +98,8 @@ export default function GaragePage() {
     }
   }
 
-  function openVersion(project, version) {
-    const draft = draftFromConfig(version.config_json);
-    sessionStorage.setItem('project-drive-last-result', JSON.stringify({
-      projectId: project.id,
-      versionId: version.id,
-      sourceUrl: project.source_url,
-      outputUrl: version.output_url || project.source_url,
-      creditsCharged: version.credits_charged,
-      createdAt: version.created_at,
-      draft,
-    }));
-    router.push('/result');
+  function openVersion(version) {
+    router.push(`/result/${encodeURIComponent(version.id)}`);
   }
 
   function beginRename(project) {
@@ -150,11 +109,12 @@ export default function GaragePage() {
   }
 
   async function saveProjectName(projectId) {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     const cleanName = editingName.trim();
     if (!token || !cleanName) return;
     try {
-      const updated = await apiRequest(`/api/projects/${encodeURIComponent(projectId)}`, token, {
+      const updated = await apiRequest(`/api/projects/${encodeURIComponent(projectId)}`, {
+        token,
         method: 'PATCH', body: { name: cleanName },
       });
       setProjects((current) => current.map((project) => project.id === projectId ? { ...project, name: updated.name } : project));
@@ -243,7 +203,7 @@ export default function GaragePage() {
                 const details = [draft.tint?.name && `${draft.tint.name} tint`, draft.wheel?.label].filter(Boolean).join(' · ');
                 return (
                   <article className="versionCard" key={version.id}>
-                    <button type="button" onClick={() => openVersion(project, version)}>
+                    <button type="button" onClick={() => openVersion(version)}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={version.output_url || project.source_url} alt={`${project.name}: ${title}`} />
                       <span className="imageBadge savedBadge">SAVED</span>

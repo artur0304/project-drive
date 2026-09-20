@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+import { getToken, setToken } from '../lib/storage';
 import './login.css';
 
 export default function LoginPage() {
@@ -14,10 +16,10 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     if (!token) return;
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => { if (response.ok) router.replace('/garage'); })
+    apiRequest('/api/auth/me', { token })
+      .then(() => router.replace('/garage'))
       .catch(() => { /* Показываем форму, если локальный API временно недоступен. */ });
   }, [router]);
 
@@ -25,13 +27,11 @@ export default function LoginPage() {
     event.preventDefault();
     setBusy(true); setError('');
     try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password, ...(mode === 'register' ? { name: name.trim() } : {}) }),
+      const data = await apiRequest(`/api/auth/${mode}`, {
+        method: 'POST', token: '',
+        body: { email: email.trim(), password, ...(mode === 'register' ? { name: name.trim() } : {}) },
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Could not sign in.');
-      sessionStorage.setItem('project-drive-token', data.token);
+      setToken(data.token);
       router.push('/garage');
     } catch (submitError) {
       setError(submitError.message || 'Could not sign in.');

@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react';
+import { apiRequest } from './lib/api';
+import { getToken } from './lib/storage';
 import './landing.css';
 
 const KEYFRAMES = [
@@ -86,10 +88,10 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     if (!token) return;
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => setSignedIn(response.ok))
+    apiRequest('/api/auth/me', { token })
+      .then(() => setSignedIn(true))
       .catch(() => setSignedIn(false));
   }, []);
 

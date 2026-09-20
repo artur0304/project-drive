@@ -2,36 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+import { clearSession, getToken } from '../lib/storage';
 import './account.css';
-
-async function apiRequest(path, token, method = 'GET') {
-  const response = await fetch(path, { method, headers: { Authorization: `Bearer ${token}` } });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Could not load account.');
-  return data;
-}
 
 export default function AccountPage() {
   const router = useRouter();
   const [data, setData] = useState({ status: 'loading', user: null, projects: [], wallet: null });
 
   useEffect(() => {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     if (!token) { setData((current) => ({ ...current, status: 'signed-out' })); return; }
     Promise.all([
-      apiRequest('/api/auth/me', token),
-      apiRequest('/api/projects', token),
-      apiRequest('/api/wallet', token),
+      apiRequest('/api/auth/me', { token }),
+      apiRequest('/api/projects', { token }),
+      apiRequest('/api/wallet', { token }),
     ]).then(([user, projects, wallet]) => setData({ status: 'ready', user, projects, wallet }))
       .catch(() => setData((current) => ({ ...current, status: 'signed-out' })));
   }, []);
 
   async function signOut() {
-    const token = sessionStorage.getItem('project-drive-token');
-    if (token) await apiRequest('/api/auth/logout', token, 'POST').catch(() => {});
-    sessionStorage.removeItem('project-drive-token');
-    sessionStorage.removeItem('project-drive-project-id');
-    sessionStorage.removeItem('project-drive-uploaded-project-id');
+    const token = getToken();
+    if (token) await apiRequest('/api/auth/logout', { token, method: 'POST' }).catch(() => {});
+    clearSession();
     router.push('/');
   }
 

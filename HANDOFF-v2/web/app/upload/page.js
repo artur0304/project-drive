@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../lib/api';
+import { clearActiveProject, getToken } from '../lib/storage';
 import { clearPendingPhoto, savePendingPhoto } from '../lib/pending-photo';
 import './upload.css';
 
@@ -38,10 +40,9 @@ export default function UploadPage() {
   const [walletBalance, setWalletBalance] = useState(null);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('project-drive-token');
+    const token = getToken();
     if (!token) return;
-    fetch('/api/wallet', { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => response.ok ? response.json() : null)
+    apiRequest('/api/wallet', { token })
       .then((wallet) => { if (wallet) setWalletBalance(wallet.balance); })
       .catch(() => { /* Upload продолжает работать и без показателя баланса. */ });
   }, []);
@@ -88,10 +89,7 @@ export default function UploadPage() {
       await savePendingPhoto(file);
       // Эта кнопка начинает НОВУЮ машину. Удаляем только указатели текущей
       // вкладки; старый проект и его версии остаются сохранёнными в Garage.
-      sessionStorage.removeItem('project-drive-project-id');
-      sessionStorage.removeItem('project-drive-uploaded-project-id');
-      sessionStorage.removeItem('project-drive-last-result');
-      localStorage.removeItem('project-drive-draft');
+      clearActiveProject({ includeDraft: true });
       router.push('/configurator');
     } catch {
       setError('The browser could not save this photo. Please choose it again.');
