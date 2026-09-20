@@ -31,7 +31,9 @@
    node --experimental-sqlite server.mjs
    ```
    Откроется на http://localhost:3000
-5. Проверить в браузере: открой http://localhost:3000/api/health — должно показать `{"ok":true}`.
+5. Интерфейс открывается на http://localhost:3001. Если открыть корень backend
+   http://localhost:3000, он сам перенаправит туда. Проверка API доступна на
+   http://localhost:3000/api/health — должно показать `{"ok":true}`.
 
 ## Что уже умеет API
 Публичные:

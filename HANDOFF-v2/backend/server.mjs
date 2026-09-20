@@ -56,6 +56,7 @@ function tokenFrom(req) {
 
 const PORT = Number(process.env.PROJECT_DRIVE_PORT || 3000);
 const HOST = '127.0.0.1';
+const WEB_APP_URL = 'http://127.0.0.1:3001';
 const MOCK_PAYMENTS_ENABLED = process.env.PROJECT_DRIVE_ENABLE_MOCK_PAYMENTS === '1';
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_FAILURES = 5;
@@ -135,12 +136,28 @@ function send(res, status, obj) {
   res.end(JSON.stringify(obj, null, 2));
 }
 
+// Если человек случайно открыл адрес API в браузере, отправляем его в интерфейс.
+// Сам API остаётся на /api/* и по-прежнему отвечает JSON.
+function redirectToWebApp(res) {
+  res.writeHead(302, {
+    Location: WEB_APP_URL,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+  });
+  res.end();
+}
+
 export const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
   const method = req.method;
 
   try {
+    if (method === 'GET' && path === '/') {
+      return redirectToWebApp(res);
+    }
+
     // --- проверка живости ---
     if (method === 'GET' && path === '/api/health') {
       return send(res, 200, { ok: true, service: 'project-drive-backend' });
@@ -393,5 +410,6 @@ server.listen(PORT, HOST, () => {
   const address = server.address();
   const listeningPort = typeof address === 'object' && address ? address.port : PORT;
   console.log(`Project Drive backend запущен: http://${HOST}:${listeningPort}`);
+  console.log(`Интерфейс Project Drive: ${WEB_APP_URL}`);
   console.log(`Проверка: открой http://localhost:${listeningPort}/api/health`);
 });

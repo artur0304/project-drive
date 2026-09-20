@@ -13,6 +13,10 @@ const address = server.address();
 const base = `http://127.0.0.1:${address.port}`;
 
 try {
+  const root = await fetch(`${base}/`, { redirect: 'manual' });
+  assert.equal(root.status, 302);
+  assert.equal(root.headers.get('location'), 'http://127.0.0.1:3001');
+
   const health = await fetch(`${base}/api/health`);
   assert.equal(health.status, 200);
   assert.equal(health.headers.get('cache-control'), 'no-store');
@@ -71,7 +75,7 @@ try {
   assert.equal(blockedLogin.status, 429);
   assert.ok(Number(blockedLogin.headers.get('retry-after')) > 0);
 
-  console.log('✅ Legacy-маршруты, uploads, JSON, mock-платежи и вход защищены.');
+  console.log('✅ Корень ведёт в интерфейс; legacy-маршруты, uploads, JSON, mock-платежи и вход защищены.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
