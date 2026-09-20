@@ -93,6 +93,18 @@
 .primaryButton { padding: 11px 18px; border: 0; border-radius: 9px; background: var(--accent); color: #180A06; }
 .primaryButton:hover { background: var(--accent-2); }
 .primaryButton:disabled { cursor: wait; opacity: .65; }
+.vehicleConfirm { display:grid; grid-template-columns:1.1fr 1fr auto; align-items:end; gap:16px; padding:18px; border-top:1px solid var(--line); text-align:left; }
+.vehicleConfirm>div:first-child { align-self:center; }
+.vehicleConfirm span { display:block; margin-bottom:5px; color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.12em; }
+.vehicleConfirm strong { display:block; font-size:14px; }
+.vehicleConfirm small { display:block; max-width:300px; margin-top:6px; color:var(--text-3); font-size:10px; line-height:1.45; }
+.vehicleFields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.vehicleFields label { color:var(--text-2); font-size:10px; }
+.vehicleFields input { width:100%; margin-top:5px; padding:9px 10px; border:1px solid var(--line-2); border-radius:7px; background:#101319; color:var(--text); font:600 12px Manrope,sans-serif; }
+.vehicleChoices { display:flex; flex-direction:column; gap:6px; }
+.vehicleChoices button { padding:9px 11px; border:1px solid var(--line-2); border-radius:7px; background:transparent; color:var(--text-2); font:700 10px Manrope,sans-serif; cursor:pointer; white-space:nowrap; }
+.vehicleChoices button.selected { border-color:var(--ok); color:var(--ok); }
+.vehicleChoices button:disabled { opacity:.35; cursor:not-allowed; }
 
 .errorMessage { margin: 16px 0 0; color: #FF8E7A; font-size: 13px; }
 .privacyNote { margin: 18px 0 0; color: var(--text-3); font-size: 12px; }
@@ -103,6 +115,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outlin
   .tips { grid-template-columns: 1fr; }
   .previewBar { align-items: flex-start; flex-direction: column; }
   .previewActions { width: 100%; justify-content: flex-end; }
+  .vehicleConfirm { grid-template-columns:1fr; align-items:stretch; }
+  .vehicleChoices { flex-direction:row; }
+  .vehicleChoices button { flex:1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

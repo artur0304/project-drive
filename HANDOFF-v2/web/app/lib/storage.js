@@ -5,6 +5,7 @@ const KEYS = Object.freeze({
   draft: 'project-drive-draft',
   projectId: 'project-drive-project-id',
   uploadedProjectId: 'project-drive-uploaded-project-id',
+  vehicle: 'project-drive-confirmed-vehicle',
   legacyLastResult: 'project-drive-last-result',
 });
 
@@ -28,6 +29,17 @@ export function getUploadedProjectId() { return session()?.getItem(KEYS.uploaded
 export function setUploadedProjectId(id) { session()?.setItem(KEYS.uploadedProjectId, id); }
 export function clearUploadedProjectId() { session()?.removeItem(KEYS.uploadedProjectId); }
 
+export function getConfirmedVehicle() {
+  const raw = session()?.getItem(KEYS.vehicle);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+export function setConfirmedVehicle(vehicle) {
+  if (vehicle) session()?.setItem(KEYS.vehicle, JSON.stringify(vehicle));
+  else session()?.removeItem(KEYS.vehicle);
+}
+export function clearConfirmedVehicle() { session()?.removeItem(KEYS.vehicle); }
+
 export function getDraft() {
   const raw = local()?.getItem(KEYS.draft);
   if (!raw) return null;
@@ -44,6 +56,7 @@ export function clearLegacyLastResult() { session()?.removeItem(KEYS.legacyLastR
 export function clearActiveProject({ includeDraft = false } = {}) {
   clearProjectId();
   clearUploadedProjectId();
+  clearConfirmedVehicle();
   clearLegacyLastResult();
   if (includeDraft) clearDraft();
 }

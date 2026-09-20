@@ -7,7 +7,7 @@ import { apiRequest } from '../lib/api';
 import { costFromPricing, operationsFromDraft } from '../lib/configuration';
 import { parseVehicleCommand } from '../lib/command-parser';
 import {
-  clearProjectId, clearToken, clearUploadedProjectId, getDraft, getProjectId,
+  clearProjectId, clearToken, clearUploadedProjectId, getConfirmedVehicle, getDraft, getProjectId,
   getToken, getUploadedProjectId, setDraft as saveDraft, setProjectId,
   setToken, setUploadedProjectId,
 } from '../lib/storage';
@@ -147,9 +147,14 @@ export default function ConfiguratorPage() {
       clearUploadedProjectId();
     }
 
+    const vehicle = getConfirmedVehicle();
     const project = await apiRequest('/api/projects', {
       method: 'POST', token,
-      body: { name: photoName.replace(/\.[^.]+$/, '') || 'My car' },
+      body: {
+        name: [vehicle?.make, vehicle?.model].filter(Boolean).join(' ') || photoName.replace(/\.[^.]+$/, '') || 'My car',
+        vehicleMake: vehicle?.make || null,
+        vehicleModel: vehicle?.model || null,
+      },
     });
     setProjectId(project.id);
     return project.id;

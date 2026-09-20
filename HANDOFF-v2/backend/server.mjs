@@ -315,9 +315,16 @@ export const server = createServer(async (req, res) => {
       const user = auth.checkSession(tokenFrom(req));
       if (!user) return send(res, 401, { error: 'нужен вход' });
       const { name, vehicleMake, vehicleModel } = await readBody(req);
-      if (!name) return send(res, 400, { error: 'нужен name' });
+      const cleanName = typeof name === 'string' ? name.trim() : '';
+      const cleanMake = typeof vehicleMake === 'string' ? vehicleMake.trim() : '';
+      const cleanModel = typeof vehicleModel === 'string' ? vehicleModel.trim() : '';
+      if (!cleanName || cleanName.length > 80) return send(res, 400, { error: 'название должно содержать от 1 до 80 символов' });
+      if (cleanMake.length > 60 || cleanModel.length > 80) return send(res, 400, { error: 'марка или модель слишком длинная' });
       // userId берём из пропуска, а НЕ из тела запроса — так нельзя создать проект "за другого"
-      return send(res, 201, db.createProject({ userId: user.id, name, vehicleMake, vehicleModel }));
+      return send(res, 201, db.createProject({
+        userId: user.id, name: cleanName,
+        vehicleMake: cleanMake || null, vehicleModel: cleanModel || null,
+      }));
     }
     if (method === 'GET' && path === '/api/projects') {
       const user = auth.checkSession(tokenFrom(req));

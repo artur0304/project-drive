@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '../lib/api';
-import { clearActiveProject, getToken } from '../lib/storage';
+import { clearActiveProject, getToken, setConfirmedVehicle } from '../lib/storage';
 import { clearPendingPhoto, savePendingPhoto } from '../lib/pending-photo';
+import { normalizeConfirmedVehicle, suggestVehicleFromFileName } from '../lib/vehicle-recognition';
 import './upload.css';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -38,6 +39,9 @@ export default function UploadPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [walletBalance, setWalletBalance] = useState(null);
+  const [vehicle, setVehicle] = useState({ make: '', model: '' });
+  const [vehicleDecision, setVehicleDecision] = useState('pending');
+  const [vehicleHint, setVehicleHint] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -68,6 +72,10 @@ export default function UploadPage() {
     }
     setError('');
     setFile(nextFile);
+    const suggestion = suggestVehicleFromFileName(nextFile.name);
+    setVehicle(suggestion ? { make: suggestion.make, model: suggestion.model } : { make: '', model: '' });
+    setVehicleHint(Boolean(suggestion));
+    setVehicleDecision('pending');
   }
 
   function openPicker() {
@@ -77,12 +85,15 @@ export default function UploadPage() {
   async function replacePhoto() {
     setFile(null);
     setError('');
+    setVehicle({ make: '', model: '' });
+    setVehicleDecision('pending');
+    setVehicleHint(false);
     await clearPendingPhoto();
     fileInput.current?.click();
   }
 
   async function startCustomizing() {
-    if (!file || isSaving) return;
+    if (!file || isSaving || vehicleDecision === 'pending') return;
     setIsSaving(true);
     setError('');
     try {
@@ -90,6 +101,7 @@ export default function UploadPage() {
       // Эта кнопка начинает НОВУЮ машину. Удаляем только указатели текущей
       // вкладки; старый проект и его версии остаются сохранёнными в Garage.
       clearActiveProject({ includeDraft: true });
+      setConfirmedVehicle(vehicleDecision === 'confirmed' ? normalizeConfirmedVehicle(vehicle) : null);
       router.push('/configurator');
     } catch {
       setError('The browser could not save this photo. Please choose it again.');
@@ -186,11 +198,26 @@ export default function UploadPage() {
                 </div>
                 <div className="previewActions">
                   <button className="replaceButton" type="button" onClick={replacePhoto}>Replace</button>
-                  <button className="primaryButton" type="button" onClick={startCustomizing} disabled={isSaving}>
-                    {isSaving ? 'Saving…' : 'Start customizing'}
+                  <button className="primaryButton" type="button" onClick={startCustomizing} disabled={isSaving || vehicleDecision === 'pending'}>
+                    {isSaving ? 'Saving…' : vehicleDecision === 'pending' ? 'Confirm or skip below' : 'Start customizing'}
                   </button>
                 </div>
               </div>
+              <section className="vehicleConfirm" aria-labelledby="vehicle-confirm-title">
+                <div>
+                  <span>VEHICLE LABEL · LOCAL PREVIEW</span>
+                  <strong id="vehicle-confirm-title">{vehicleHint ? 'We found a filename hint' : 'Add the car label'}</strong>
+                  <small>No paid AI was called. Confirm, correct, or skip; this label never changes the render.</small>
+                </div>
+                <div className="vehicleFields">
+                  <label>Make<input value={vehicle.make} maxLength="60" placeholder="BMW" onChange={(event) => { setVehicle((current) => ({ ...current, make: event.target.value })); setVehicleDecision('pending'); }} /></label>
+                  <label>Model<input value={vehicle.model} maxLength="80" placeholder="X5" onChange={(event) => { setVehicle((current) => ({ ...current, model: event.target.value })); setVehicleDecision('pending'); }} /></label>
+                </div>
+                <div className="vehicleChoices">
+                  <button type="button" className={vehicleDecision === 'confirmed' ? 'selected' : ''} onClick={() => setVehicleDecision('confirmed')} disabled={!normalizeConfirmedVehicle(vehicle)}>Confirm label</button>
+                  <button type="button" className={vehicleDecision === 'skipped' ? 'selected' : ''} onClick={() => setVehicleDecision('skipped')}>Skip</button>
+                </div>
+              </section>
             </div>
           )}
 
