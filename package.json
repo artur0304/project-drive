@@ -6,6 +6,9 @@
     "install:all": "npm --prefix HANDOFF-v2/backend install && npm --prefix HANDOFF-v2/web install",
     "dev:backend": "node --experimental-sqlite HANDOFF-v2/backend/server.mjs",
     "dev:web": "npm --prefix HANDOFF-v2/web run dev",
-    "build:web": "npm --prefix HANDOFF-v2/web run build"
+    "build:web": "npm --prefix HANDOFF-v2/web run build",
+    "test:backend": "npm --prefix HANDOFF-v2/backend test",
+    "test:web": "npm --prefix HANDOFF-v2/web test",
+    "test": "npm run test:backend && npm run test:web"
   }
 }

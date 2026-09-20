@@ -36,6 +36,8 @@ Configurator, Result, Garage, Credits, Account и Login. Это уже не ар
 - жалобы на неудачный результат;
 - JPEG-нормализация загрузок с удалением EXIF/GPS;
 - production-сборка Next.js.
+- постоянные ссылки результата `/result/<versionId>` с загрузкой из API;
+- единый серверный прайс и изолированные тесты денежной цепочки.
 
 Реальные платные AI-вызовы отключены. Правило и полный статус проекта описаны в
 [`HANDOFF-v2/00_READ_ME_FIRST.md`](HANDOFF-v2/00_READ_ME_FIRST.md).
@@ -66,6 +68,11 @@ Production-проверка frontend:
 npm run build:web
 ```
 
+Все локальные тесты:
+
+```bash
+npm test
+```
+
 Локальные базы, пользовательские загрузки, `.env`, API-ключи, `node_modules` и
 результаты сборки намеренно не публикуются в Git.
-
