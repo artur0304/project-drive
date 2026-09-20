@@ -50,7 +50,7 @@ export default function LoginPage() {
           <form onSubmit={submit}>
             {mode === 'register' && <label>Name<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Your name" /></label>}
             <label>Email<input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" /></label>
-            <label>Password<input type="password" required minLength="6" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder="At least 6 characters" /></label>
+            <label>Password<input type="password" required minLength="6" maxLength="128" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder="At least 6 characters" /></label>
             {error && <p className="loginError" role="alert">{error}</p>}
             <button className="loginSubmit" type="submit" disabled={busy}>{busy ? 'Opening garage…' : mode === 'login' ? 'Sign in to garage' : 'Create account'}</button>
           </form>

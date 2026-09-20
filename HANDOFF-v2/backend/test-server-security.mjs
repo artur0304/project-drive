@@ -31,8 +31,15 @@ try {
   assert.equal((await fetch(`${base}/uploads/not-a-server-uuid.jpg`)).status, 404);
   assert.equal((await fetch(`${base}/uploads/%2e%2e%2fserver.mjs`)).status, 404);
 
-  console.log('✅ Публичные /api/users закрыты, uploads принимает только UUID.jpg.');
+  assert.equal((await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{broken',
+  })).status, 400);
+  assert.equal((await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: `${'a'.repeat(70 * 1024)}@example.com`, password: 'secret123' }),
+  })).status, 413);
+
+  console.log('✅ Legacy-маршруты закрыты, uploads и размер JSON ограничены.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
-

@@ -38,7 +38,7 @@ export default function AuthGate({ busy, error, onClose, onSubmit }) {
             <form className="authForm" onSubmit={submit}>
               {mode === 'register' && <label>Name <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Your name" /></label>}
               <label>Email <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" /></label>
-              <label>Password <input type="password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'register' ? 'new-password' : 'current-password'} placeholder="At least 6 characters" /></label>
+              <label>Password <input type="password" required minLength={6} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'register' ? 'new-password' : 'current-password'} placeholder="At least 6 characters" /></label>
               {error && <p className="authError" role="alert">{error}</p>}
               <button className="authSubmit" type="submit">{mode === 'register' ? 'Create account and continue' : 'Sign in and continue'}</button>
             </form>

@@ -64,12 +64,34 @@ function isLoopbackRequest(req) {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
-// Помощник: прочитать JSON-тело запроса (то, что прислал браузер).
-function readBody(req) {
-  return new Promise((resolve) => {
-    let data = '';
-    req.on('data', (c) => (data += c));
-    req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch { resolve({}); } });
+// Помощник: прочитать небольшое JSON-тело. Фотографии проходят через отдельный
+// readRaw с собственным лимитом. Здесь не даём обычному API заполнить память.
+function readBody(req, maxBytes = 64 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let tooLarge = false;
+
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        tooLarge = true;
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (tooLarge) return reject(Object.assign(new Error('JSON-тело больше 64 КБ'), { statusCode: 413 }));
+      if (!chunks.length) return resolve({});
+      try {
+        const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error('not an object');
+        return resolve(parsed);
+      } catch {
+        return reject(Object.assign(new Error('некорректный JSON'), { statusCode: 400 }));
+      }
+    });
+    req.on('error', reject);
   });
 }
 
@@ -309,7 +331,7 @@ export const server = createServer(async (req, res) => {
     // если маршрут не найден
     return send(res, 404, { error: 'маршрут не найден: ' + method + ' ' + path });
   } catch (e) {
-    return send(res, 500, { error: String(e.message || e) });
+    return send(res, e.statusCode || 500, { error: String(e.message || e) });
   }
 });
 

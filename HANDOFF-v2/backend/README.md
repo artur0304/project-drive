@@ -72,6 +72,8 @@ node --experimental-sqlite scripts/seed-credits.mjs user@example.com 100
 `/api/auth/register` с паролем, а список email публично не выдаётся.
 Email сохраняется в нижнем регистре и сравнивается без учёта регистра. Локальная
 сессия действует 30 дней; просроченный токен удаляется при следующей проверке.
+Обычные JSON-запросы ограничены 64 КБ: повреждённый JSON получает `400`, слишком
+большой — `413`. Для фотографий действует отдельный лимит 20 МБ.
 curl -X POST "http://localhost:3000/api/upload?projectId=ВАШ_ID" \
      -H "Authorization: Bearer ВАШ_ТОКЕН" -H "Content-Type: image/jpeg" \
      --data-binary "@my-car.jpg"
