@@ -34,6 +34,16 @@ npm run bakeoff:demo
 «кандидат × операция». Для плёнки и тонировки нужны 6 общих критериев; два
 критерия дисков добавляются только для `wheel_replace` и `wheel_recolor`.
 
+Полный безопасный dry-run по `bakeoff/cases.json` и всем сохранённым фотографиям:
+
+```bash
+npm run bakeoff:mock-manifest
+```
+
+Он создаёт матрицу «4 фото × 2 mock-кандидата», копирует 8 результатов в
+`out/manifest-mock/images/` и готовит те же отчёты, что будущий платный прогон.
+Команда жёстко передаёт `allowPaidProviders: false`.
+
 Demo всегда передаёт `allowPaidProviders: false`. Даже если платный адаптер случайно
 попадёт в registry, он не будет вызван. Разрешённый в будущем платный прогон требует
 одновременно `allowPaidProviders: true`, положительный `maxBudgetUsd` и одноразовую
