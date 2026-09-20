@@ -7,7 +7,8 @@
   "scripts": {
     "bakeoff:demo": "ts-node src/bakeoff/runBakeoff.ts",
     "bakeoff:validate": "ts-node src/bakeoff/validateManifest.ts",
-    "test": "tsc --noEmit && ts-node src/bakeoff/budgetGuard.test.ts && ts-node src/bakeoff/manifest.test.ts && ts-node src/bakeoff/matrix.test.ts"
+    "bakeoff:score": "ts-node src/bakeoff/scoreBakeoff.ts",
+    "test": "tsc --noEmit && ts-node src/bakeoff/budgetGuard.test.ts && ts-node src/bakeoff/manifest.test.ts && ts-node src/bakeoff/matrix.test.ts && ts-node src/bakeoff/scoring.test.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

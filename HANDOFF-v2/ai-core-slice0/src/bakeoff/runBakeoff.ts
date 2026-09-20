@@ -21,10 +21,12 @@ import { MockAIProvider } from "../providers/mockProvider";
 import { SpendGuard } from "../budget";
 import { persistOutputArtifact } from "./artifacts";
 import {
-  RUBRIC_CRITERIA,
+  criteriaForOperations,
   RubricScore,
   isAccepted,
+  meanScore,
   PASS_RATE,
+  scoreErrors,
 } from "./rubric";
 
 // --- Вход: набор тестовых фото и операций к каждому ---
@@ -178,7 +180,7 @@ function writeScoringTemplate(rows: BakeoffRow[], file: string) {
       operationKinds: r.operationKinds,
       sourceImage: r.sourceImage,
       outputImage: r.outputImage,
-      scores: Object.fromEntries(RUBRIC_CRITERIA.map((c) => [c, null])) as RubricScore,
+      scores: Object.fromEntries(criteriaForOperations(r.operationKinds).map((c) => [c, null])) as RubricScore,
       note: "",
     }));
   fs.writeFileSync(file, JSON.stringify(template, null, 2));
@@ -221,26 +223,100 @@ function printCostSummary(rows: BakeoffRow[]) {
 
 // --- Оценка качества после ручного заполнения scoring-шаблона ---
 
-export function summarizeQuality(scoredFile: string) {
-  const scored: { operationKinds: OperationKind[]; scores: RubricScore }[] =
-    JSON.parse(fs.readFileSync(scoredFile, "utf-8"));
+export interface QualityGroupSummary {
+  total: number;
+  accepted: number;
+  acceptanceRate: number;
+  meanScore: number;
+  verdict: "PASS" | "NO-GO";
+}
 
-  const byOp = new Map<OperationKind, { total: number; accepted: number }>();
+export interface QualitySummary {
+  byOperation: Record<string, QualityGroupSummary>;
+  byCandidate: Record<string, QualityGroupSummary>;
+  byCandidateOperation: Record<string, Record<string, QualityGroupSummary>>;
+}
+
+export function summarizeQuality(scoredFile: string, blindKeyFile?: string): QualitySummary {
+  const scored: { renderId: string; operationKinds: OperationKind[]; scores: RubricScore }[] =
+    JSON.parse(fs.readFileSync(scoredFile, "utf-8"));
+  if (!Array.isArray(scored) || scored.length === 0) throw new Error("Scoring file has no renders");
+
+  const blindRows: { renderId: string; candidate: string }[] = blindKeyFile
+    ? JSON.parse(fs.readFileSync(blindKeyFile, "utf-8"))
+    : [];
+  const candidateByRender = new Map(blindRows.map((row) => [row.renderId, row.candidate]));
+  const seen = new Set<string>();
+
+  const byOp = new Map<OperationKind, QualityAccumulator>();
+  const byCandidate = new Map<string, QualityAccumulator>();
+  const byCandidateOperation = new Map<string, QualityAccumulator>();
   for (const item of scored) {
+    if (!item.renderId || seen.has(item.renderId)) throw new Error(`Missing or duplicate renderId: ${item.renderId || "(empty)"}`);
+    seen.add(item.renderId);
+    const errors = scoreErrors(item.scores, item.operationKinds);
+    if (errors.length) throw new Error(`${item.renderId}: ${errors.join("; ")}`);
+    const accepted = isAccepted(item.scores, item.operationKinds);
+    const score = meanScore(item.scores, item.operationKinds);
     for (const op of item.operationKinds) {
-      const acc = byOp.get(op) ?? { total: 0, accepted: 0 };
-      acc.total += 1;
-      acc.accepted += isAccepted(item.scores) ? 1 : 0;
-      byOp.set(op, acc);
+      addQualityResult(byOp, op, accepted, score);
+    }
+    if (blindKeyFile) {
+      const candidate = candidateByRender.get(item.renderId);
+      if (!candidate) throw new Error(`${item.renderId}: missing from blind key`);
+      addQualityResult(byCandidate, candidate, accepted, score);
+      for (const op of item.operationKinds) addQualityResult(byCandidateOperation, `${candidate}\u0000${op}`, accepted, score);
     }
   }
 
   console.log("\n=== QUALITY GO / NO-GO (порог ", PASS_RATE * 100, "%) ===");
-  for (const [op, a] of byOp) {
-    const rate = a.total > 0 ? a.accepted / a.total : 0;
-    const verdict = rate >= PASS_RATE ? "PASS ✅" : "NO-GO ❌";
-    console.log(`${op}: accepted ${a.accepted}/${a.total} = ${(rate * 100).toFixed(0)}%  ${verdict}`);
+  const operationSummary = finalizeQuality(byOp);
+  const candidateSummary = finalizeQuality(byCandidate);
+  const candidateOperationSummary: Record<string, Record<string, QualityGroupSummary>> = {};
+  for (const [joinedKey, result] of Object.entries(finalizeQuality(byCandidateOperation))) {
+    const [candidate, operation] = joinedKey.split("\u0000");
+    candidateOperationSummary[candidate] ??= {};
+    candidateOperationSummary[candidate][operation] = result;
   }
+  for (const [op, result] of Object.entries(operationSummary)) {
+    console.log(`${op}: accepted ${result.accepted}/${result.total} = ${(result.acceptanceRate * 100).toFixed(0)}%  ${result.verdict}`);
+  }
+  for (const [candidate, result] of Object.entries(candidateSummary)) {
+    console.log(`${candidate}: accepted ${result.accepted}/${result.total}, mean=${result.meanScore.toFixed(2)}  ${result.verdict}`);
+  }
+  for (const [candidate, operations] of Object.entries(candidateOperationSummary)) {
+    for (const [operation, result] of Object.entries(operations)) {
+      console.log(`${candidate} / ${operation}: ${(result.acceptanceRate * 100).toFixed(0)}%  ${result.verdict}`);
+    }
+  }
+  return {
+    byOperation: operationSummary,
+    byCandidate: candidateSummary,
+    byCandidateOperation: candidateOperationSummary,
+  };
+}
+
+interface QualityAccumulator { total: number; accepted: number; scoreTotal: number }
+
+function addQualityResult(map: Map<string, QualityAccumulator>, key: string, accepted: boolean, score: number) {
+  const current = map.get(key) ?? { total: 0, accepted: 0, scoreTotal: 0 };
+  current.total += 1;
+  current.accepted += accepted ? 1 : 0;
+  current.scoreTotal += score;
+  map.set(key, current);
+}
+
+function finalizeQuality(map: Map<string, QualityAccumulator>): Record<string, QualityGroupSummary> {
+  return Object.fromEntries([...map.entries()].map(([key, value]) => {
+    const acceptanceRate = value.total ? value.accepted / value.total : 0;
+    return [key, {
+      total: value.total,
+      accepted: value.accepted,
+      acceptanceRate,
+      meanScore: value.total ? value.scoreTotal / value.total : 0,
+      verdict: acceptanceRate >= PASS_RATE ? "PASS" : "NO-GO",
+    } satisfies QualityGroupSummary];
+  }));
 }
 
 // --- Пример запуска с mock-провайдерами (без сети). ---
