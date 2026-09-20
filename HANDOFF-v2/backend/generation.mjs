@@ -54,8 +54,13 @@ export function validateOperations(operations) {
     } else {
       const name = cleanText(raw.name, 120);
       const color = raw.color == null ? null : cleanText(raw.color, 32);
+      const variantId = raw.variantId == null ? null : cleanText(raw.variantId, 100);
+      const referenceImage = raw.referenceImage == null ? null : cleanText(raw.referenceImage, 500);
       if (!name || (raw.color != null && !color)) return { ok: false, error: 'неверные параметры дисков' };
-      normalized.push({ kind, name, ...(color ? { color } : {}) });
+      if (referenceImage && !referenceImage.match(/^\/(?:wheel-catalog|wheel-uploads)\/[a-z0-9._-]+$/i)) {
+        return { ok: false, error: 'неверная ссылка reference-изображения' };
+      }
+      normalized.push({ kind, name, ...(color ? { color } : {}), ...(variantId ? { variantId } : {}), ...(referenceImage ? { referenceImage } : {}) });
     }
   }
   return { ok: true, operations: normalized };

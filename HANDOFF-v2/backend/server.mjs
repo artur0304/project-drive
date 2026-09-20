@@ -29,10 +29,13 @@ import * as db from './db.mjs';
 import * as auth from './auth.mjs';   // вход/регистрация
 import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
 import { normalizeUploadedImage } from './image-normalizer.mjs';
+import { validateWheelReference } from './wheel-reference.mjs';
 
 // папка, куда складываем загруженные фото (создаётся сама)
 const UP = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
 if (!existsSync(UP)) mkdirSync(UP, { recursive: true });
+const WHEEL_UP = join(dirname(fileURLToPath(import.meta.url)), 'wheel-uploads');
+if (!existsSync(WHEEL_UP)) mkdirSync(WHEEL_UP, { recursive: true });
 
 // Прочитать "сырое" тело (байты файла), но не больше maxBytes — иначе обрываем.
 function readRaw(req, maxBytes) {
@@ -52,6 +55,47 @@ function readRaw(req, maxBytes) {
 function tokenFrom(req) {
   const h = req.headers['authorization'] || '';
   return h.startsWith('Bearer ') ? h.slice(7) : null;
+}
+
+function isAdmin(user) {
+  if (!user) return false;
+  const allowed = String(process.env.PROJECT_DRIVE_ADMIN_EMAILS || '')
+    .split(',').map((email) => email.trim().toLowerCase()).filter(Boolean);
+  return allowed.includes(String(user.email).toLowerCase());
+}
+
+function cleanSlug(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+}
+
+function parseWheelEntry(input) {
+  const brand = String(input?.brand || '').trim().slice(0, 80);
+  const model = String(input?.model || '').trim().slice(0, 100);
+  const sizeLabel = String(input?.sizeLabel || '').trim().slice(0, 20);
+  const color = String(input?.color || '').trim().slice(0, 80);
+  const finish = String(input?.finish || '').trim().slice(0, 80);
+  const rightsSource = String(input?.rightsSource || '').trim().slice(0, 250);
+  const rightsBasis = String(input?.rightsBasis || '').trim().slice(0, 250);
+  const diameter = Number(input?.diameter);
+  if (!brand || !model || !sizeLabel || !color || !finish || !rightsSource || !rightsBasis || !Number.isInteger(diameter) || diameter < 12 || diameter > 30) {
+    const error = new Error('нужны brand, model, sizeLabel, diameter 12–30, color, finish и основание прав');
+    error.statusCode = 400;
+    throw error;
+  }
+  return {
+    brand, brandSlug: cleanSlug(input.brandSlug || brand), isOem: input.isOem === true || ['1', 'true', 'yes'].includes(String(input.isOem || '').toLowerCase()),
+    model, modelSlug: cleanSlug(input.modelSlug || model),
+    variant: {
+      sizeLabel, diameter, color, finish, rightsSource, rightsBasis,
+      supplier: String(input.supplier || '').trim().slice(0, 120) || null,
+      priceCents: input.priceCents == null || input.priceCents === '' ? null : Number(input.priceCents),
+      affiliateLink: String(input.affiliateLink || '').trim().slice(0, 500) || null,
+      popularity: Number(input.popularity) || 0,
+      boltPattern: String(input.boltPattern || '').trim().slice(0, 40) || null,
+      offset: input.offset == null || input.offset === '' ? null : Number(input.offset),
+      centerBore: input.centerBore == null || input.centerBore === '' ? null : Number(input.centerBore),
+    },
+  };
 }
 
 const PORT = Number(process.env.PROJECT_DRIVE_PORT || 3000);
@@ -167,6 +211,96 @@ export const server = createServer(async (req, res) => {
     // значения, но при генерации сервер всё равно пересчитывает сумму сам.
     if (method === 'GET' && path === '/api/pricing') {
       return send(res, 200, { operations: PRICE });
+    }
+
+    // --- каталог дисков: публичное чтение, персональные списки после входа ---
+    if (method === 'GET' && path === '/api/wheels') {
+      const result = db.listWheels({
+        search: url.searchParams.get('q') || '', brand: url.searchParams.get('brand') || '',
+        kind: url.searchParams.get('kind') || '', diameter: url.searchParams.get('diameter'),
+        finish: url.searchParams.get('finish') || '', color: url.searchParams.get('color') || '',
+        cursor: url.searchParams.get('cursor') || '', limit: url.searchParams.get('limit') || 24,
+      });
+      return send(res, 200, { ...result, facets: db.listWheelFacets() });
+    }
+    if (method === 'GET' && path === '/api/wheels/favorites') {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      return send(res, 200, db.listFavoriteWheels(user.id, url.searchParams.get('limit')));
+    }
+    if (method === 'GET' && path === '/api/wheels/recent') {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      return send(res, 200, db.listRecentWheels(user.id, url.searchParams.get('limit')));
+    }
+    const favoriteMatch = path.match(/^\/api\/wheels\/([^/]+)\/favorite$/);
+    if (method === 'POST' && favoriteMatch) {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const result = db.toggleFavoriteWheel({ userId: user.id, variantId: decodeURIComponent(favoriteMatch[1]) });
+      return result ? send(res, 200, result) : send(res, 404, { error: 'диск не найден' });
+    }
+    const viewedMatch = path.match(/^\/api\/wheels\/([^/]+)\/view$/);
+    if (method === 'POST' && viewedMatch) {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const ok = db.recordRecentlyViewedWheel({ userId: user.id, variantId: decodeURIComponent(viewedMatch[1]) });
+      return ok ? send(res, 200, { ok: true }) : send(res, 404, { error: 'диск не найден' });
+    }
+
+    // --- минимальная админка каталога ---
+    if (path.startsWith('/api/admin/')) {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      if (!isAdmin(user)) return send(res, 403, { error: 'нужен доступ администратора' });
+
+      if (method === 'GET' && path === '/api/admin/overview') {
+        return send(res, 200, {
+          wheels: db.listAdminWheels(), aiJobs: db.listAiJobs(), audit: db.listAuditLog(), users: db.listUsers(),
+        });
+      }
+      if (method === 'POST' && path === '/api/admin/wheels') {
+        const entry = parseWheelEntry(await readBody(req));
+        return send(res, 201, db.createWheelCatalogEntry({ ...entry, actorUserId: user.id }));
+      }
+      if (method === 'POST' && path === '/api/admin/wheels/import') {
+        const body = await readBody(req);
+        if (!Array.isArray(body.rows) || !body.rows.length || body.rows.length > 500) return send(res, 400, { error: 'нужно от 1 до 500 строк' });
+        const created = body.rows.map((row) => db.createWheelCatalogEntry({ ...parseWheelEntry(row), actorUserId: user.id }));
+        return send(res, 201, { created: created.length, items: created });
+      }
+      const adminWheelMatch = path.match(/^\/api\/admin\/wheels\/([^/]+)$/);
+      if (method === 'PATCH' && adminWheelMatch) {
+        const { visible } = await readBody(req);
+        const result = db.setWheelVisibility({ variantId: decodeURIComponent(adminWheelMatch[1]), visible: Boolean(visible), actorUserId: user.id });
+        return result ? send(res, 200, result) : send(res, 404, { error: 'диск не найден' });
+      }
+      const referenceMatch = path.match(/^\/api\/admin\/wheels\/([^/]+)\/reference$/);
+      if (method === 'POST' && referenceMatch) {
+        const rightsSource = String(url.searchParams.get('rightsSource') || '').trim().slice(0, 250);
+        const rightsBasis = String(url.searchParams.get('rightsBasis') || '').trim().slice(0, 250);
+        const angle = url.searchParams.get('angle');
+        if (!rightsSource || !rightsBasis || !['front', 'three_quarter'].includes(angle)) return send(res, 400, { error: 'нужны источник, основание прав и ракурс' });
+        let raw;
+        try { raw = await readRaw(req, 10 * 1024 * 1024); } catch { return send(res, 413, { error: 'файл больше 10 МБ' }); }
+        const contentType = String(req.headers['content-type'] || '').split(';')[0];
+        const image = await validateWheelReference(raw, contentType);
+        const ext = contentType === 'image/webp' ? 'webp' : 'png';
+        const fileName = `${randomUUID()}.${ext}`;
+        writeFileSync(join(WHEEL_UP, fileName), image.buffer);
+        const saved = db.addWheelReferenceImage({
+          variantId: decodeURIComponent(referenceMatch[1]), url: `/wheel-uploads/${fileName}`,
+          mimeType: contentType, width: image.width, height: image.height, hasAlpha: image.hasAlpha,
+          angle, rightsSource, rightsBasis, actorUserId: user.id,
+        });
+        return saved ? send(res, 201, saved) : send(res, 404, { error: 'диск не найден' });
+      }
+      if (method === 'POST' && path === '/api/admin/credits/adjust') {
+        const { userId, delta, reason } = await readBody(req);
+        const cleanReason = String(reason || '').trim().slice(0, 250);
+        if (!cleanReason) return send(res, 400, { error: 'укажи причину корректировки' });
+        return send(res, 200, db.adjustCreditsByAdmin({ userId, delta: Number(delta), reason: cleanReason, actorUserId: user.id }));
+      }
     }
 
     // --- проекты (машины) — ТОЛЬКО свои, берём пользователя из пропуска ---
@@ -341,6 +475,18 @@ export const server = createServer(async (req, res) => {
         'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'same-origin',
+      });
+      return res.end(readFileSync(f));
+    }
+
+    const wheelUploadMatch = method === 'GET' && path.match(/^\/wheel-uploads\/([0-9a-f-]{36}\.(?:png|webp))$/i);
+    if (wheelUploadMatch) {
+      const f = join(WHEEL_UP, wheelUploadMatch[1]);
+      if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
+      res.writeHead(200, {
+        'Content-Type': f.endsWith('.webp') ? 'image/webp' : 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
       });
       return res.end(readFileSync(f));
     }

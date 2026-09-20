@@ -12,6 +12,10 @@ const nextConfig = {
         source: '/uploads/:path*',
         destination: 'http://127.0.0.1:3000/uploads/:path*',
       },
+      {
+        source: '/wheel-uploads/:path*',
+        destination: 'http://127.0.0.1:3000/wheel-uploads/:path*',
+      },
     ];
   },
 };

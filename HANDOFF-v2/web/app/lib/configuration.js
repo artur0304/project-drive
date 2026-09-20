@@ -2,7 +2,11 @@ export function operationsFromDraft(draft) {
   const operations = [];
   if (draft?.wrap) operations.push({ kind: 'wrap', color: draft.wrap.color, finish: draft.wrap.finish });
   if (draft?.tint) operations.push({ kind: 'tint', level: draft.tint.level, name: draft.tint.name });
-  if (draft?.wheel) operations.push({ kind: draft.wheel.kind, name: draft.wheel.name, color: draft.wheel.color });
+  if (draft?.wheel) operations.push({
+    kind: draft.wheel.kind, name: draft.wheel.name, color: draft.wheel.color,
+    ...(draft.wheel.variantId ? { variantId: draft.wheel.variantId } : {}),
+    ...(draft.wheel.referenceImage ? { referenceImage: draft.wheel.referenceImage } : {}),
+  });
   return operations;
 }
 
@@ -27,6 +31,8 @@ export function draftFromOperations(operations = []) {
         kind: operation.kind,
         name: operation.name,
         color: operation.color,
+        ...(operation.variantId ? { variantId: operation.variantId } : {}),
+        ...(operation.referenceImage ? { referenceImage: operation.referenceImage } : {}),
         label: operation.kind === 'wheel_recolor' ? `${operation.name} wheels` : operation.name,
       };
     }

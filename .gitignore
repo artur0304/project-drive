@@ -19,6 +19,8 @@ HANDOFF-v2/ai-core-slice0/out/
 *.sqlite3
 **/backend/uploads/*
 !**/backend/uploads/.gitkeep
+**/backend/wheel-uploads/*
+!**/backend/wheel-uploads/.gitkeep
 
 # Переносимый Node.js и архивы передачи проекта
 **/tools/node-*/

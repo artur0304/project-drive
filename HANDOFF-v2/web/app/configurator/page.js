@@ -11,7 +11,8 @@ import {
   setToken, setUploadedProjectId,
 } from '../lib/storage';
 import { CarMark, FullscreenIcon, UndoIcon } from '../components/configurator-icons';
-import { TintTab, WheelColorTab, WheelsTab, WrapTab } from '../components/configurator-tabs';
+import { TintTab, WheelColorTab, WrapTab } from '../components/configurator-tabs';
+import WheelCatalog from '../components/wheel-catalog';
 import GenerateFooter from '../components/generate-footer';
 import AuthGate from './auth-gate';
 import './configurator.css';
@@ -38,6 +39,7 @@ export default function ConfiguratorPage() {
   const [walletBalance, setWalletBalance] = useState(null);
   const [pricing, setPricing] = useState(null);
   const [generationError, setGenerationError] = useState('');
+  const [sheetState, setSheetState] = useState('half');
 
   useEffect(() => {
     let objectUrl = '';
@@ -108,8 +110,11 @@ export default function ConfiguratorPage() {
   function selectTint(name, level) {
     setDraft((current) => ({ ...current, tint: level ? { name, level } : null }));
   }
-  function selectWheel(name, detail, color) {
-    setDraft((current) => ({ ...current, wheel: { kind: 'wheel_replace', label: name, name, detail, color } }));
+  function selectWheel(name, detail, color, wheel) {
+    setDraft((current) => ({ ...current, wheel: {
+      kind: 'wheel_replace', label: name, name, detail, color,
+      variantId: wheel?.id || null, referenceImage: wheel?.image_url || null,
+    } }));
   }
   function selectWheelColor(name, color) {
     setDraft((current) => ({ ...current, wheel: { kind: 'wheel_recolor', label: `${name} wheels`, name, color } }));
@@ -229,7 +234,11 @@ export default function ConfiguratorPage() {
         <div className="stageDots" aria-hidden="true"><span className="on" /><span /><span /></div>
       </section>
 
-      <aside className="configPanel">
+      <aside className={`configPanel sheet-${sheetState}`}>
+        <div className="sheetHandle" role="group" aria-label="Configurator panel size">
+          <button type="button" aria-label="Change panel size" onClick={() => setSheetState((current) => current === 'peek' ? 'half' : current === 'half' ? 'full' : 'peek')}><span /></button>
+          <div>{[['peek', 'Peek'], ['half', 'Half'], ['full', 'Full']].map(([value, label]) => <button key={value} type="button" className={sheetState === value ? 'active' : ''} onClick={() => setSheetState(value)}>{label}</button>)}</div>
+        </div>
         <header className="panelTop">
           <div className="brandLine">
             <a className="configBrand" href="/"><CarMark />Project Drive</a>
@@ -245,7 +254,7 @@ export default function ConfiguratorPage() {
         <div className="panelBody">
           {activeTab === 'wrap' && <WrapTab draft={draft} onColor={changeWrapColor} onFinish={changeFinish} />}
           {activeTab === 'tint' && <TintTab draft={draft} onSelect={selectTint} />}
-          {activeTab === 'wheels' && <WheelsTab draft={draft} onSelect={selectWheel} />}
+          {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} generationCost={pricing?.wheel_replace ?? 20} />}
           {activeTab === 'wcolor' && <WheelColorTab draft={draft} onSelect={selectWheelColor} />}
         </div>
 
