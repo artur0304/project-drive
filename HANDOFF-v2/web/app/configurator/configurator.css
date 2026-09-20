@@ -29,6 +29,19 @@
 .configTabs button { flex:1; padding:9px 6px; border:0; border-radius:99px; background:none; color:var(--text-2); font:600 12.5px/1 Manrope,sans-serif; white-space:nowrap; cursor:pointer; }
 .configTabs button.active { background:var(--panel-2); color:var(--text); }
 
+.aiCommand { flex:none; padding:12px 20px; border-bottom:1px solid var(--line); background:#141820; }
+.aiCommand>div:first-child { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+.aiCommand span { color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.1em; }
+.aiCommand small { color:var(--text-3); font-size:9px; }
+.aiCommandRow { display:flex; gap:6px; }
+.aiCommandRow input { min-width:0; flex:1; padding:9px 10px; border:1px solid var(--line); border-radius:8px; outline:0; background:var(--bg); color:var(--text); font:500 10.5px/1.2 Manrope,sans-serif; }
+.aiCommandRow input:focus { border-color:var(--accent); }
+.aiCommandRow button,.commandPreview button { padding:8px 10px; border:1px solid var(--line-2); border-radius:7px; background:var(--panel-2); color:var(--text-2); font:700 10px/1 Manrope,sans-serif; cursor:pointer; }
+.commandPreview { margin-top:8px; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); }
+.commandPreview ul { margin:0 0 8px; padding-left:17px; color:var(--text-2); font-size:10px; line-height:1.55; }
+.commandPreview>div { display:flex; justify-content:flex-end; gap:6px; }
+.commandPreview .applyCommand { border-color:var(--accent); background:var(--accent); color:#180A06; }
+
 .panelBody { flex:1; overflow-y:auto; padding:20px; }
 .panelBody::-webkit-scrollbar { width:6px; }
 .panelBody::-webkit-scrollbar-thumb { border-radius:99px; background:var(--line-2); }
@@ -145,6 +158,7 @@
   .sheetHandle>div button { padding:5px 7px; border:0; border-radius:6px; background:none; color:var(--text-3); font:600 9px/1 Manrope,sans-serif; cursor:pointer; }
   .sheetHandle>div button.active { background:var(--panel-2); color:var(--text-2); }
   .sheet-peek .panelTop, .sheet-peek .panelBody { display:none; }
+  .sheet-peek .aiCommand { display:none; }
   .sheet-peek .configFoot { margin-top:auto; }
   .panelTop { padding-top:8px; }
   .panelBody { overscroll-behavior:contain; }

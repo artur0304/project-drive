@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getPendingPhoto } from '../lib/pending-photo';
 import { apiRequest } from '../lib/api';
 import { costFromPricing, operationsFromDraft } from '../lib/configuration';
+import { parseVehicleCommand } from '../lib/command-parser';
 import {
   clearProjectId, clearToken, clearUploadedProjectId, getDraft, getProjectId,
   getToken, getUploadedProjectId, setDraft as saveDraft, setProjectId,
@@ -40,6 +41,8 @@ export default function ConfiguratorPage() {
   const [pricing, setPricing] = useState(null);
   const [generationError, setGenerationError] = useState('');
   const [sheetState, setSheetState] = useState('half');
+  const [command, setCommand] = useState('');
+  const [commandPreview, setCommandPreview] = useState(null);
 
   useEffect(() => {
     let objectUrl = '';
@@ -122,6 +125,17 @@ export default function ConfiguratorPage() {
   async function toggleFullscreen() {
     if (!document.fullscreenElement) await stageRef.current?.requestFullscreen?.();
     else await document.exitFullscreen?.();
+  }
+
+  function prepareCommand() {
+    setCommandPreview(parseVehicleCommand(command));
+  }
+
+  function applyCommand() {
+    if (!commandPreview) return;
+    setDraft((current) => ({ ...current, ...commandPreview.patch }));
+    if (commandPreview.needsWheelSelection) setActiveTab('wheels');
+    setCommandPreview(null);
   }
 
   async function getOrCreateProject(token) {
@@ -250,6 +264,12 @@ export default function ConfiguratorPage() {
             ))}
           </div>
         </header>
+
+        <section className="aiCommand" aria-label="Describe changes">
+          <div><span>AI COMMAND</span><small>Creates a draft only</small></div>
+          <div className="aiCommandRow"><input value={command} onChange={(event) => setCommand(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') prepareCommand(); }} placeholder="e.g. remove tint and make the wrap matte red" /><button type="button" onClick={prepareCommand}>Prepare</button></div>
+          {commandPreview && <div className="commandPreview"><ul>{commandPreview.messages.map((message) => <li key={message}>{message}</li>)}</ul><div><button type="button" onClick={() => setCommandPreview(null)}>Cancel</button><button className="applyCommand" type="button" onClick={applyCommand}>Apply to draft</button></div></div>}
+        </section>
 
         <div className="panelBody">
           {activeTab === 'wrap' && <WrapTab draft={draft} onColor={changeWrapColor} onFinish={changeFinish} />}
