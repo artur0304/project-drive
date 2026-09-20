@@ -58,7 +58,8 @@ export function getUser(id) {
 }
 
 export function getUserByEmail(email) {
-  return db.prepare('SELECT * FROM users WHERE email = ?').get(email) ?? null;
+  // Email регистронезависим: Artur@Example.com и artur@example.com — один аккаунт.
+  return db.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').get(email) ?? null;
 }
 
 export function listUsers() {

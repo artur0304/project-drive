@@ -16,6 +16,16 @@
 import { scryptSync, randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import db, { createUser, getUserByEmail } from './db.mjs';
 
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function normalizeEmail(email) {
+  const value = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (value.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    throw new Error('введи корректный email');
+  }
+  return value;
+}
+
 // --- Таблицы под пароли и "пропуска" (сессии). Создаём, если ещё нет. ---
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_credentials (
@@ -51,11 +61,15 @@ function verifyPassword(password, stored) {
 
 // --- РЕГИСТРАЦИЯ: создаём пользователя + сохраняем отпечаток пароля ---
 export function register({ email, password, name = null }) {
-  if (!email || !password) throw new Error('нужны email и пароль');
+  const cleanEmail = normalizeEmail(email);
+  if (typeof password !== 'string' || !password) throw new Error('нужны email и пароль');
   if (password.length < 6) throw new Error('пароль слишком короткий (мин. 6 символов)');
-  if (getUserByEmail(email)) throw new Error('пользователь с таким email уже есть');
+  if (password.length > 128) throw new Error('пароль слишком длинный (макс. 128 символов)');
+  if (getUserByEmail(cleanEmail)) throw new Error('пользователь с таким email уже есть');
 
-  const user = createUser({ email, name });     // создаём профиль (+ кошелёк внутри)
+  const cleanName = typeof name === 'string' ? name.trim().slice(0, 80) : null;
+
+  const user = createUser({ email: cleanEmail, name: cleanName || null }); // создаём профиль (+ кошелёк внутри)
   db.prepare('INSERT INTO user_credentials (user_id, password_hash) VALUES (?, ?)')
     .run(user.id, hashPassword(password));
   const token = startSession(user.id);          // сразу выдаём "пропуск"
@@ -64,11 +78,13 @@ export function register({ email, password, name = null }) {
 
 // --- ВХОД: проверяем почту+пароль, выдаём "пропуск" ---
 export function login({ email, password }) {
-  const user = getUserByEmail(email);
+  let cleanEmail;
+  try { cleanEmail = normalizeEmail(email); } catch { throw new Error('неверная почта или пароль'); }
+  const user = getUserByEmail(cleanEmail);
   const cred = user && db.prepare('SELECT password_hash FROM user_credentials WHERE user_id = ?').get(user.id);
   // Одна и та же ошибка и при неверной почте, и при неверном пароле —
   // чтобы нельзя было по ответу узнать, какие email зарегистрированы.
-  if (!user || !cred || !verifyPassword(password, cred.password_hash)) {
+  if (!user || !cred || typeof password !== 'string' || !verifyPassword(password, cred.password_hash)) {
     throw new Error('неверная почта или пароль');
   }
   const token = startSession(user.id);
@@ -87,8 +103,13 @@ function startSession(userId) {
 // Так сервер понимает, кто сейчас обращается.
 export function checkSession(token) {
   if (!token) return null;
-  const row = db.prepare('SELECT user_id FROM sessions WHERE token = ?').get(token);
+  const row = db.prepare('SELECT user_id, created_at FROM sessions WHERE token = ?').get(token);
   if (!row) return null;
+  const createdAt = Date.parse(row.created_at);
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt > SESSION_TTL_MS) {
+    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    return null;
+  }
   return db.prepare('SELECT * FROM users WHERE id = ?').get(row.user_id) ?? null;
 }
 

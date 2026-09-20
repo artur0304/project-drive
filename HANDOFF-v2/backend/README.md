@@ -70,6 +70,8 @@ node --experimental-sqlite scripts/seed-credits.mjs user@example.com 100
 
 Старые `GET/POST /api/users` удалены: аккаунт создаётся только через
 `/api/auth/register` с паролем, а список email публично не выдаётся.
+Email сохраняется в нижнем регистре и сравнивается без учёта регистра. Локальная
+сессия действует 30 дней; просроченный токен удаляется при следующей проверке.
 curl -X POST "http://localhost:3000/api/upload?projectId=ВАШ_ID" \
      -H "Authorization: Bearer ВАШ_ТОКЕН" -H "Content-Type: image/jpeg" \
      --data-binary "@my-car.jpg"
