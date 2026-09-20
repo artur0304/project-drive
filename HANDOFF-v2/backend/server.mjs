@@ -57,6 +57,34 @@ function tokenFrom(req) {
 const PORT = Number(process.env.PROJECT_DRIVE_PORT || 3000);
 const HOST = '127.0.0.1';
 const MOCK_PAYMENTS_ENABLED = process.env.PROJECT_DRIVE_ENABLE_MOCK_PAYMENTS === '1';
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 5;
+const loginFailures = new Map();
+
+function loginKey(req, email) {
+  return `${req.socket.remoteAddress || 'unknown'}:${String(email || '').trim().toLowerCase()}`;
+}
+
+function loginBlock(key) {
+  const entry = loginFailures.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.startedAt >= LOGIN_WINDOW_MS) {
+    loginFailures.delete(key);
+    return null;
+  }
+  return entry.count >= LOGIN_MAX_FAILURES ? entry : null;
+}
+
+function recordLoginFailure(key) {
+  const current = loginFailures.get(key);
+  if (!current || Date.now() - current.startedAt >= LOGIN_WINDOW_MS) {
+    loginFailures.set(key, { count: 1, startedAt: Date.now() });
+  } else {
+    current.count += 1;
+  }
+  // Локальный сервер не должен бесконечно хранить попытки по выдуманным email.
+  if (loginFailures.size > 10_000) loginFailures.clear();
+}
 
 // Пока настоящий платёжный провайдер не подключён, webhook разрешён только
 // процессам на этом компьютере. Внешний запрос не сможет начислить кредиты.
@@ -219,8 +247,21 @@ export const server = createServer(async (req, res) => {
     }
     if (method === 'POST' && path === '/api/auth/login') {
       const { email, password } = await readBody(req);
-      try { return send(res, 200, auth.login({ email, password })); }
-      catch (e) { return send(res, 401, { error: e.message }); }   // 401 = не пустили
+      const key = loginKey(req, email);
+      const blocked = loginBlock(key);
+      if (blocked) {
+        const retryAfter = Math.max(1, Math.ceil((LOGIN_WINDOW_MS - (Date.now() - blocked.startedAt)) / 1000));
+        res.setHeader('Retry-After', String(retryAfter));
+        return send(res, 429, { error: 'слишком много попыток входа, попробуй позже', retryAfter });
+      }
+      try {
+        const result = auth.login({ email, password });
+        loginFailures.delete(key);
+        return send(res, 200, result);
+      } catch (e) {
+        recordLoginFailure(key);
+        return send(res, 401, { error: e.message });
+      }
     }
     if (method === 'GET' && path === '/api/auth/me') {
       const user = auth.checkSession(tokenFrom(req));   // кто я по пропуску?

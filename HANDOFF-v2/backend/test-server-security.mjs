@@ -54,7 +54,21 @@ try {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
   })).status, 404);
 
-  console.log('✅ Legacy-маршруты, uploads, JSON и mock-платежи защищены.');
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const wrongLogin = await fetch(`${base}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'payment-guard@example.com', password: 'wrong-password' }),
+    });
+    assert.equal(wrongLogin.status, 401);
+  }
+  const blockedLogin = await fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'payment-guard@example.com', password: 'wrong-password' }),
+  });
+  assert.equal(blockedLogin.status, 429);
+  assert.ok(Number(blockedLogin.headers.get('retry-after')) > 0);
+
+  console.log('✅ Legacy-маршруты, uploads, JSON, mock-платежи и вход защищены.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
