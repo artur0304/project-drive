@@ -1,33 +1,78 @@
 {
+  "version": 1,
   "purpose": "Matched multi-provider comparison; no API runs performed",
+  "target": {
+    "minUniquePhotos": 15,
+    "minCasesPerOperation": 5
+  },
   "cases": [
     {
-      "id": "photo-2",
-      "input": "inputs/photo-2.jpg",
-      "wheelReference": "inputs/photo-1.jpg",
-      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
-      "status": "awaiting_provider_access"
+      "caseId": "photo-2-combined",
+      "photoLabel": "White BMW X5 · front three-quarter · night",
+      "sourceImage": "inputs/photo-2.jpg",
+      "tags": ["front-three-quarter", "night", "suv", "light-body", "street-background"],
+      "operations": [
+        { "kind": "wrap", "finish": "gloss", "colorName": "Deep Emerald Green", "colorHex": "#0B4D3A" },
+        { "kind": "tint", "level": "none" },
+        {
+          "kind": "wheel_replace",
+          "wheelVariantId": "provided-bmw-machined-black",
+          "label": "Provided BMW machined silver and black wheel",
+          "referenceImageUrls": ["inputs/photo-1.jpg"]
+        }
+      ],
+      "status": "prepared_mock_only"
     },
     {
-      "id": "photo-3",
-      "input": "inputs/photo-3.jpg",
-      "wheelReference": "inputs/photo-1.jpg",
-      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome. Edit the foreground BMW sedan only; leave the white SUV unchanged.",
-      "status": "awaiting_provider_access"
+      "caseId": "photo-3-combined",
+      "photoLabel": "Black BMW sedan · front three-quarter · overcast",
+      "sourceImage": "inputs/photo-3.jpg",
+      "tags": ["front-three-quarter", "overcast", "sedan", "dark-body", "other-cars"],
+      "operations": [
+        { "kind": "wrap", "finish": "gloss", "colorName": "Deep Emerald Green", "colorHex": "#0B4D3A" },
+        { "kind": "tint", "level": "none" },
+        {
+          "kind": "wheel_replace",
+          "wheelVariantId": "provided-bmw-machined-black",
+          "label": "Provided BMW machined silver and black wheel",
+          "referenceImageUrls": ["inputs/photo-1.jpg"]
+        }
+      ],
+      "status": "prepared_mock_only"
     },
     {
-      "id": "photo-4",
-      "input": "inputs/photo-4.jpg",
-      "wheelReference": "inputs/photo-1.jpg",
-      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
-      "status": "awaiting_provider_access"
+      "caseId": "photo-4-combined",
+      "photoLabel": "Black Range Rover · side three-quarter · wet night",
+      "sourceImage": "inputs/photo-4.jpg",
+      "tags": ["side-three-quarter", "night", "suv", "dark-body", "wet-reflections"],
+      "operations": [
+        { "kind": "wrap", "finish": "gloss", "colorName": "Deep Emerald Green", "colorHex": "#0B4D3A" },
+        { "kind": "tint", "level": "none" },
+        {
+          "kind": "wheel_replace",
+          "wheelVariantId": "provided-bmw-machined-black",
+          "label": "Provided BMW machined silver and black wheel",
+          "referenceImageUrls": ["inputs/photo-1.jpg"]
+        }
+      ],
+      "status": "prepared_mock_only"
     },
     {
-      "id": "photo-5",
-      "input": "inputs/photo-5.jpg",
-      "wheelReference": "inputs/photo-1.jpg",
-      "prompt": "Edit only the main foreground car. Preserve camera, framing, body geometry, badges, plate, lighting, scene and every other vehicle. Use photo-1.jpg only as the wheel reference. No beautification or unrelated edits. Replace all visible rims with the exact reference wheel design including spoke topology, black pockets and machined silver faces. Preserve tire outer diameter, wheel centers and ride height. Remove dark window tint while retaining realistic reflections and plausible glass. Apply deep emerald green glossy vinyl to painted body panels only; retain black plastic and chrome.",
-      "status": "awaiting_provider_access"
+      "caseId": "photo-5-combined",
+      "photoLabel": "Black Range Rover · rear three-quarter · daylight",
+      "sourceImage": "inputs/photo-5.jpg",
+      "tags": ["rear-three-quarter", "daylight", "suv", "dark-body", "street-background"],
+      "operations": [
+        { "kind": "wrap", "finish": "gloss", "colorName": "Deep Emerald Green", "colorHex": "#0B4D3A" },
+        { "kind": "tint", "level": "none" },
+        {
+          "kind": "wheel_replace",
+          "wheelVariantId": "provided-bmw-machined-black",
+          "label": "Provided BMW machined silver and black wheel",
+          "referenceImageUrls": ["inputs/photo-1.jpg"]
+        }
+      ],
+      "status": "prepared_mock_only"
     }
   ]
 }

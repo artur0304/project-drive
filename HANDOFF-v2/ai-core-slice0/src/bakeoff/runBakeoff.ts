@@ -28,7 +28,7 @@ import {
 
 // --- Вход: набор тестовых фото и операций к каждому ---
 
-interface BakeoffCase {
+export interface BakeoffCase {
   caseId: string; // напр. "photo01_wrap_green"
   photoLabel: string; // "BMW M4 front 3/4"
   sourceImage: string; // url/base64
