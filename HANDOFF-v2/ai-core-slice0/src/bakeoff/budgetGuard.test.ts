@@ -54,7 +54,7 @@ async function testPaidRunNeedsOneTimeEnvironmentConfirmation() {
     const registry = new ProviderRegistry({ primary: "mock" })
       .register(new MockAIProvider({ name: "mock", costUsd: 0.01, latencyMsRange: [0, 0] }));
     await assert.rejects(
-      () => runBakeoff([], registry, "unused-test-output", { maxBudgetUsd: 2, allowPaidProviders: true }),
+      () => runBakeoff([], [{ label: "mock", registry }], "unused-test-output", { maxBudgetUsd: 2, allowPaidProviders: true }),
       /Paid AI is locked/,
     );
   } finally {

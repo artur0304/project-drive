@@ -35,10 +35,18 @@ export interface BakeoffCase {
   operations: OperationConfig[];
 }
 
-interface BakeoffRow {
+export interface BakeoffCandidate {
+  /** Название сравниваемой конфигурации, например gemini-pro или gemini-flash. */
+  label: string;
+  registry: ProviderRegistry;
+  retriesSameProvider?: number;
+}
+
+export interface BakeoffRow {
   caseId: string;
   photoLabel: string;
   operationKinds: OperationKind[];
+  candidate: string;
   provider: string;
   ok: boolean;
   attemptsCount: number;
@@ -55,7 +63,7 @@ export interface BakeoffSafetyOptions {
 
 export async function runBakeoff(
   cases: BakeoffCase[],
-  registry: ProviderRegistry,
+  candidates: BakeoffCandidate[],
   outDir: string,
   safety: BakeoffSafetyOptions
 ): Promise<BakeoffRow[]> {
@@ -64,28 +72,44 @@ export async function runBakeoff(
   if (safety.allowPaidProviders && process.env.PROJECT_DRIVE_ALLOW_PAID_AI !== "YES_FOR_THIS_RUN") {
     throw new Error("Paid AI is locked. Set PROJECT_DRIVE_ALLOW_PAID_AI=YES_FOR_THIS_RUN only after explicit approval.");
   }
+  if (!Array.isArray(candidates) || candidates.length === 0) throw new Error("Bake-off needs at least one candidate");
+  const labels = new Set<string>();
+  for (const candidate of candidates) {
+    if (!candidate.label.trim()) throw new Error("Bake-off candidate label is required");
+    if (labels.has(candidate.label)) throw new Error(`Duplicate bake-off candidate: ${candidate.label}`);
+    labels.add(candidate.label);
+  }
   const spendGuard = new SpendGuard(safety);
-  const orchestrator = new GenerationOrchestrator(registry, { retriesSameProvider: 1, spendGuard });
+  const runners = candidates.map((candidate) => ({
+    candidate,
+    orchestrator: new GenerationOrchestrator(candidate.registry, {
+      retriesSameProvider: candidate.retriesSameProvider ?? 1,
+      spendGuard,
+    }),
+  }));
   const rows: BakeoffRow[] = [];
 
   for (const c of cases) {
-    const req: GenerationRequest = {
-      sourceImage: c.sourceImage,
-      operations: c.operations,
-    };
-    const res = await orchestrator.run(req);
-    rows.push({
-      caseId: c.caseId,
-      photoLabel: c.photoLabel,
-      operationKinds: c.operations.map((o) => o.kind),
-      provider: res.providerUsed ?? "(none)",
-      ok: res.ok,
-      attemptsCount: res.attempts.length,
-      totalLatencyMs: res.totalLatencyMs,
-      totalInternalCostUsd: res.totalInternalCostUsd,
-      failureReason: res.failureReason,
-      outputImage: res.outputImage,
-    });
+    for (const { candidate, orchestrator } of runners) {
+      const req: GenerationRequest = {
+        sourceImage: c.sourceImage,
+        operations: c.operations,
+      };
+      const res = await orchestrator.run(req);
+      rows.push({
+        caseId: c.caseId,
+        photoLabel: c.photoLabel,
+        operationKinds: c.operations.map((o) => o.kind),
+        candidate: candidate.label,
+        provider: res.providerUsed ?? "(none)",
+        ok: res.ok,
+        attemptsCount: res.attempts.length,
+        totalLatencyMs: res.totalLatencyMs,
+        totalInternalCostUsd: res.totalInternalCostUsd,
+        failureReason: res.failureReason,
+        outputImage: res.outputImage,
+      });
+    }
   }
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -99,7 +123,9 @@ export async function runBakeoff(
     mode: safety.allowPaidProviders ? "paid-enabled" : "mock-only",
     ...spendGuard.snapshot(),
     casesRequested: cases.length,
-    casesCompleted: rows.filter((row) => row.ok).length,
+    candidates: candidates.map((candidate) => candidate.label),
+    renderRequests: cases.length * candidates.length,
+    successfulRenders: rows.filter((row) => row.ok).length,
   }, null, 2));
 
   printCostSummary(rows);
@@ -108,7 +134,7 @@ export async function runBakeoff(
 
 function writeCsv(rows: BakeoffRow[], file: string) {
   const header = [
-    "caseId", "photoLabel", "operations", "provider",
+    "caseId", "photoLabel", "operations", "candidate", "provider",
     "ok", "attempts", "latencyMs", "internalCostUsd", "failureReason",
   ].join(",");
   const body = rows
@@ -117,6 +143,7 @@ function writeCsv(rows: BakeoffRow[], file: string) {
         r.caseId,
         `"${r.photoLabel}"`,
         `"${r.operationKinds.join("+")}"`,
+        r.candidate,
         r.provider,
         r.ok,
         r.attemptsCount,
@@ -135,6 +162,7 @@ function writeScoringTemplate(rows: BakeoffRow[], file: string) {
     .filter((r) => r.ok) // оцениваем только успешные рендеры
     .map((r) => ({
       caseId: r.caseId,
+      candidate: r.candidate,
       provider: r.provider,
       operationKinds: r.operationKinds,
       scores: Object.fromEntries(RUBRIC_CRITERIA.map((c) => [c, null])) as RubricScore,
@@ -146,7 +174,7 @@ function writeScoringTemplate(rows: BakeoffRow[], file: string) {
 function printCostSummary(rows: BakeoffRow[]) {
   const byProvider = new Map<string, { n: number; ok: number; cost: number; latency: number }>();
   for (const r of rows) {
-    const key = r.provider;
+    const key = `${r.candidate} -> ${r.provider}`;
     const acc = byProvider.get(key) ?? { n: 0, ok: 0, cost: 0, latency: 0 };
     acc.n += 1;
     acc.ok += r.ok ? 1 : 0;
@@ -194,9 +222,18 @@ export function summarizeQuality(scoredFile: string) {
 // --- Пример запуска с mock-провайдерами (без сети). ---
 // Замени mock на реальные адаптеры и передай реальные фото/операции для настоящего bake-off.
 if (require.main === module) {
-  const registry = new ProviderRegistry({ primary: "mockA", fallback: "mockB" })
-    .register(new MockAIProvider({ name: "mockA", failureRate: 0.2, costUsd: 0.04 }))
-    .register(new MockAIProvider({ name: "mockB", failureRate: 0.0, costUsd: 0.06 }));
+  const candidates: BakeoffCandidate[] = [
+    {
+      label: "mock-a",
+      registry: new ProviderRegistry({ primary: "mockA" })
+        .register(new MockAIProvider({ name: "mockA", failureRate: 0.2, costUsd: 0.04 })),
+    },
+    {
+      label: "mock-b",
+      registry: new ProviderRegistry({ primary: "mockB" })
+        .register(new MockAIProvider({ name: "mockB", failureRate: 0.0, costUsd: 0.06 })),
+    },
+  ];
 
   const demoCases: BakeoffCase[] = [
     {
@@ -220,7 +257,7 @@ if (require.main === module) {
     },
   ];
 
-  runBakeoff(demoCases, registry, path.join(__dirname, "../../out"), {
+  runBakeoff(demoCases, candidates, path.join(__dirname, "../../out"), {
     maxBudgetUsd: 2,
     allowPaidProviders: false,
   }).then(() => {

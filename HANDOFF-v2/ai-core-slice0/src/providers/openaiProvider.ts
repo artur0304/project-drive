@@ -14,6 +14,7 @@ import type { AICarEditProvider } from "./provider";
 import type { OperationConfig, ProviderResult } from "../types";
 
 export interface OpenAIProviderOptions {
+  name?: string; // уникальная подпись модели в bake-off
   apiKey: string; // передаётся из process.env, не хардкодить
   model: string; // имя image-edit модели — подтвердить по доке
   endpoint?: string; // напр. "https://api.openai.com/v1/images/edits" — ПОДТВЕРДИТЬ
@@ -22,7 +23,7 @@ export interface OpenAIProviderOptions {
 }
 
 export class OpenAICarEditProvider implements AICarEditProvider {
-  readonly name = "openai";
+  readonly name: string;
   readonly billingMode = "paid" as const;
   readonly maxCostUsdPerCall: number;
   private opts: OpenAIProviderOptions;
@@ -30,6 +31,7 @@ export class OpenAICarEditProvider implements AICarEditProvider {
   constructor(opts: OpenAIProviderOptions) {
     if (!opts.apiKey) throw new Error("OpenAICarEditProvider: apiKey is required (use env)");
     this.opts = opts;
+    this.name = opts.name ?? `openai:${opts.model}`;
     this.maxCostUsdPerCall = opts.estimatedCostUsd ?? 0.05;
   }
 

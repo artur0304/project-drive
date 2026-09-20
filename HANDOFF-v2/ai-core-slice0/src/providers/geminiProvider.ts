@@ -29,6 +29,8 @@ import type { AICarEditProvider } from "./provider";
 import type { OperationConfig, ProviderResult } from "../types";
 
 export interface GeminiProviderOptions {
+  /** Уникальная подпись модели в bake-off, например gemini-pro или gemini-flash. */
+  name?: string;
   /** API-ключ. ТОЛЬКО из process.env.GEMINI_API_KEY — никогда не в коде. */
   apiKey: string;
   /** Имя модели. По умолчанию — Nano Banana Pro (лучшее сохранение). */
@@ -47,10 +49,10 @@ export interface GeminiProviderOptions {
 }
 
 export class GeminiCarEditProvider implements AICarEditProvider {
-  readonly name = "gemini";
+  readonly name: string;
   readonly billingMode = "paid" as const;
   readonly maxCostUsdPerCall: number;
-  private opts: Required<Omit<GeminiProviderOptions, "aspectRatio">> & {
+  private opts: Required<Omit<GeminiProviderOptions, "aspectRatio" | "name">> & {
     aspectRatio?: string;
   };
 
@@ -59,9 +61,11 @@ export class GeminiCarEditProvider implements AICarEditProvider {
       throw new Error("GeminiCarEditProvider: apiKey required (use process.env.GEMINI_API_KEY)");
     }
     // Заполняем значения по умолчанию.
+    const model = opts.model ?? "gemini-3-pro-image-preview";
+    this.name = opts.name ?? `gemini:${model}`;
     this.opts = {
       apiKey: opts.apiKey,
-      model: opts.model ?? "gemini-3-pro-image-preview",
+      model,
       baseUrl: opts.baseUrl ?? "https://generativelanguage.googleapis.com/v1beta",
       estimatedCostUsd: opts.estimatedCostUsd ?? 0.05, // placeholder, уточнить по billing
       aspectRatio: opts.aspectRatio,
