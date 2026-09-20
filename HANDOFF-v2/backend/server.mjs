@@ -5,13 +5,13 @@
 // Запуск:  node --experimental-sqlite server.mjs
 // Откроется на http://localhost:3000
 //
-// Что умеет (пока без входа, оплаты и AI — их добавим отдельными шагами):
+// Что умеет (с локальным входом и mock-генерацией, но без оплаты и реального AI):
 //   GET  /api/health                     — проверка "сервер жив"
-//   POST /api/users        {email,name}  — создать пользователя (+ кошелёк)
-//   GET  /api/users                      — список пользователей
-//   POST /api/projects     {userId,name} — создать проект (машину)
-//   GET  /api/projects?userId=…          — проекты пользователя
-//   GET  /api/wallet?userId=…            — баланс кредитов
+//   POST /api/auth/register              — создать локальный аккаунт
+//   POST /api/auth/login                 — войти и получить токен
+//   POST /api/projects                   — создать свой проект (машину)
+//   GET  /api/projects                   — получить только свои проекты
+//   GET  /api/wallet                     — получить только свой баланс
 // Демонстрационные кредиты добавляются только ручным scripts/seed-credits.mjs;
 // браузерного маршрута пополнения нет.
 //
@@ -54,7 +54,7 @@ function tokenFrom(req) {
   return h.startsWith('Bearer ') ? h.slice(7) : null;
 }
 
-const PORT = 3000;
+const PORT = Number(process.env.PROJECT_DRIVE_PORT || 3000);
 const HOST = '127.0.0.1';
 
 // Пока настоящий платёжный провайдер не подключён, webhook разрешён только
@@ -79,7 +79,7 @@ function send(res, status, obj) {
   res.end(JSON.stringify(obj, null, 2));
 }
 
-const server = createServer(async (req, res) => {
+export const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
   const method = req.method;
@@ -94,17 +94,6 @@ const server = createServer(async (req, res) => {
     // значения, но при генерации сервер всё равно пересчитывает сумму сам.
     if (method === 'GET' && path === '/api/pricing') {
       return send(res, 200, { operations: PRICE });
-    }
-
-    // --- пользователи ---
-    if (method === 'POST' && path === '/api/users') {
-      const { email, name } = await readBody(req);
-      if (!email) return send(res, 400, { error: 'нужен email' });
-      if (db.getUserByEmail(email)) return send(res, 409, { error: 'такой email уже есть' });
-      return send(res, 201, db.createUser({ email, name }));
-    }
-    if (method === 'GET' && path === '/api/users') {
-      return send(res, 200, db.listUsers());
     }
 
     // --- проекты (машины) — ТОЛЬКО свои, берём пользователя из пропуска ---
@@ -255,12 +244,13 @@ const server = createServer(async (req, res) => {
     // --- раздача загруженных файлов (ТОЛЬКО для локальной разработки) ---
     // TODO(prod): в проде файлы приватные, отдаются по временным (signed) ссылкам,
     // а не так свободно. Это лишь чтобы посмотреть загруженное на localhost.
-    if (method === 'GET' && path.startsWith('/uploads/')) {
-      const f = join(UP, path.replace('/uploads/', ''));
+    const uploadMatch = method === 'GET' && path.match(/^\/uploads\/([0-9a-f-]{36}\.jpg)$/i);
+    if (uploadMatch) {
+      // Сервер сам создаёт имена как UUID.jpg. Строгий шаблон не позволяет
+      // использовать этот маршрут для чтения произвольного файла с диска.
+      const f = join(UP, uploadMatch[1]);
       if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
-      const ext = f.split('.').pop();
-      const typeByExt = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic' };
-      res.writeHead(200, { 'Content-Type': typeByExt[ext] || 'application/octet-stream' });
+      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
       return res.end(readFileSync(f));
     }
 
@@ -324,6 +314,8 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`Project Drive backend запущен: http://${HOST}:${PORT}`);
-  console.log('Проверка: открой http://localhost:3000/api/health');
+  const address = server.address();
+  const listeningPort = typeof address === 'object' && address ? address.port : PORT;
+  console.log(`Project Drive backend запущен: http://${HOST}:${listeningPort}`);
+  console.log(`Проверка: открой http://localhost:${listeningPort}/api/health`);
 });

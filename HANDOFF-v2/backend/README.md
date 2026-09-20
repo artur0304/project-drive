@@ -13,6 +13,7 @@
 - `test-auth.mjs` — самопроверка входа.
 - `test-generation.mjs` — цена, нехватка средств, возврат и успешное списание.
 - `test-image-normalization.mjs` — применение ориентации и удаление метаданных.
+- `test-server-security.mjs` — HTTP-проверка закрытых legacy-маршрутов и безопасных имён uploads.
 - `scripts/seed-credits.mjs` — ручное локальное начисление тестовых кредитов.
 - `projectdrive.db` — сам файл базы (создастся автоматически; в git его не кладём).
 
@@ -50,7 +51,7 @@
 - `GET  /api/wallet` — мой баланс кредитов
 - `GET  /api/wallet/transactions` — моя история начислений и списаний
 - `POST /api/upload?projectId=…` — загрузить фото машины (JPG/PNG/WEBP/HEIC до 20 МБ); сервер нормализует его в JPEG без EXIF/GPS
-- `GET  /uploads/<файл>` — посмотреть загруженное (ТОЛЬКО для локальной разработки; в проде файлы приватные)
+- `GET  /uploads/<UUID>.jpg` — посмотреть созданный сервером JPEG (ТОЛЬКО для локальной разработки; в проде файлы приватные)
 - `GET  /api/packs` — список пакетов кредитов (публично, для страницы Credits)
 - `POST /api/checkout` `{packId}` — создать заказ на пакет; возвращает ссылку оплаты (сейчас заглушка)
 - `POST /api/webhook/payment` `{orderId}` — локальный каркас webhook; сервер слушает
@@ -66,6 +67,9 @@
 node --experimental-sqlite scripts/seed-credits.mjs user@example.com 100
 ```
 Такого HTTP-маршрута у клиентского приложения нет.
+
+Старые `GET/POST /api/users` удалены: аккаунт создаётся только через
+`/api/auth/register` с паролем, а список email публично не выдаётся.
 curl -X POST "http://localhost:3000/api/upload?projectId=ВАШ_ID" \
      -H "Authorization: Bearer ВАШ_ТОКЕН" -H "Content-Type: image/jpeg" \
      --data-binary "@my-car.jpg"
