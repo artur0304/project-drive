@@ -106,6 +106,10 @@ export default function WheelCatalog({ draft, onSelect, generationCost = 20 }) {
     {mode === 'popular' && <>
       <label className="wheelSearch"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brand or model" /></label>
       <div className="filterChips">{chips.map(([key, label, value]) => <button key={`${key}-${value}`} type="button" className={filters[key] === value ? 'active' : ''} onClick={() => setFilters((current) => ({ ...current, [key]: current[key] === value ? '' : value }))}>{label}</button>)}</div>
+      <div className="catalogSelects">
+        <label>Brand<select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}><option value="">All brands</option>{facets.brands.map((brand) => <option key={brand.slug} value={brand.slug}>{brand.name}</option>)}</select></label>
+        <label>Color<select value={filters.color} onChange={(event) => setFilters((current) => ({ ...current, color: event.target.value }))}><option value="">All colors</option>{facets.colors.map((color) => <option key={color} value={color}>{color}</option>)}</select></label>
+      </div>
     </>}
     {error && <p className="catalogMessage error">{error}</p>}
     {!loading && !items.length && <p className="catalogMessage">No wheels found.</p>}

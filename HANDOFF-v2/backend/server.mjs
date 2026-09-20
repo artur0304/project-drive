@@ -266,7 +266,8 @@ export const server = createServer(async (req, res) => {
       if (method === 'POST' && path === '/api/admin/wheels/import') {
         const body = await readBody(req);
         if (!Array.isArray(body.rows) || !body.rows.length || body.rows.length > 500) return send(res, 400, { error: 'нужно от 1 до 500 строк' });
-        const created = body.rows.map((row) => db.createWheelCatalogEntry({ ...parseWheelEntry(row), actorUserId: user.id }));
+        const entries = body.rows.map((row) => ({ ...parseWheelEntry(row), actorUserId: user.id }));
+        const created = db.importWheelCatalogEntries(entries);
         return send(res, 201, { created: created.length, items: created });
       }
       const adminWheelMatch = path.match(/^\/api\/admin\/wheels\/([^/]+)$/);

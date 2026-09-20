@@ -39,13 +39,19 @@ try {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: transparentPng,
   });
   assert.equal(uploaded.status, 201);
+  assert.equal((await json(`/api/admin/wheels/${variantId}`, { method: 'PATCH', token, body: { visible: true } })).response.status, 409);
+  const threeQuarterParams = new URLSearchParams({ angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive' });
+  const threeQuarter = await fetch(`${base}/api/admin/wheels/${variantId}/reference?${threeQuarterParams}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: transparentPng,
+  });
+  assert.equal(threeQuarter.status, 201);
   assert.equal((await json(`/api/admin/wheels/${variantId}`, { method: 'PATCH', token, body: { visible: true } })).response.status, 200);
 
   const overview = await json('/api/admin/overview', { token });
   assert.equal(overview.response.status, 200);
   assert.ok(overview.data.wheels.some((wheel) => wheel.id === variantId && wheel.visible === 1));
 
-  console.log('✅ Админка не публикует диск без reference и основания прав; валидный прозрачный PNG открывает публикацию.');
+  console.log('✅ Админка требует front + ¾ reference с правами и валидирует прозрачные PNG перед публикацией.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }

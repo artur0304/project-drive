@@ -67,6 +67,10 @@
 .filterChips::-webkit-scrollbar { display:none; }
 .filterChips button { flex:none; padding:7px 10px; border:1px solid var(--line); border-radius:99px; background:var(--bg-2); color:var(--text-2); font:600 10.5px/1 Manrope,sans-serif; cursor:pointer; }
 .filterChips button.active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+.catalogSelects { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:11px; }
+.catalogSelects label { color:var(--text-3); font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.catalogSelects select { width:100%; margin-top:4px; padding:8px 26px 8px 8px; border:1px solid var(--line); border-radius:8px; outline:0; background:var(--bg-2); color:var(--text-2); font:600 10.5px/1 Manrope,sans-serif; }
+.catalogSelects select:focus { border-color:var(--accent); }
 .virtualWheelViewport { height:min(47vh,470px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line-2) transparent; }
 .virtualWheelSpace { position:relative; }
 .virtualWheelRow { position:absolute; inset:0 0 auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; height:228px; }

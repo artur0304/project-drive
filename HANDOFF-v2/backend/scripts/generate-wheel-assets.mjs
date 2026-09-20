@@ -13,18 +13,25 @@ const wheels = [
   ['tmb-bronze', '#9f7148', 6, 20], ['tmb-silver', '#d0d3d6', 6, 20],
 ];
 
-for (const [name, color, spokes, twist] of wheels) {
+async function renderWheel(name, color, spokes, twist, threeQuarter = false) {
   const lines = Array.from({ length: spokes }, (_, index) => {
     const rotation = (360 / spokes) * index;
     return `<path d="M256 234 L242 82 Q256 62 270 82 L256 234" transform="rotate(${rotation + twist} 256 256)" fill="${color}" stroke="#f3f3f3" stroke-opacity=".3" stroke-width="3"/>`;
   }).join('');
+  const transform = threeQuarter ? 'translate(48 0) scale(.82 1) skewY(-3)' : '';
   const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="256" cy="256" r="208" fill="#15171b" stroke="#3a3e45" stroke-width="18"/>
+    <g transform="${transform}"><circle cx="256" cy="256" r="208" fill="#15171b" stroke="#3a3e45" stroke-width="18"/>
     <circle cx="256" cy="256" r="174" fill="#090a0d" stroke="${color}" stroke-width="16"/>
     ${lines}<circle cx="256" cy="256" r="48" fill="${color}" stroke="#0b0c0f" stroke-width="12"/>
-    <circle cx="256" cy="256" r="14" fill="#17191e"/>
+    <circle cx="256" cy="256" r="14" fill="#17191e"/></g>
   </svg>`;
-  await sharp(Buffer.from(svg)).png().toFile(join(root, `${name}.png`));
+  const suffix = threeQuarter ? '-three-quarter' : '';
+  await sharp(Buffer.from(svg)).png().toFile(join(root, `${name}${suffix}.png`));
 }
 
-console.log(`Created ${wheels.length} original catalog illustrations in ${root}`);
+for (const [name, color, spokes, twist] of wheels) {
+  await renderWheel(name, color, spokes, twist, false);
+  await renderWheel(name, color, spokes, twist, true);
+}
+
+console.log(`Created ${wheels.length * 2} original catalog illustrations in ${root}`);

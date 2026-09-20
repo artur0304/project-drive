@@ -334,10 +334,11 @@ export function listAdminWheels() {
 export function setWheelVisibility({ variantId, visible, actorUserId }) {
   if (visible) {
     const legal = db.prepare(`SELECT m.image_rights_source, m.image_rights_basis,
-      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id) AS refs
+      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.angle = 'front') AS front_refs,
+      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.angle = 'three_quarter') AS three_quarter_refs
       FROM wheel_variants v JOIN wheel_models m ON m.id = v.model_id WHERE v.id = ?`).get(variantId);
-    if (!legal || !legal.image_rights_source || !legal.image_rights_basis || !legal.refs) {
-      const error = new Error('нельзя публиковать без reference-изображения и основания прав');
+    if (!legal || !legal.image_rights_source || !legal.image_rights_basis || !legal.front_refs || !legal.three_quarter_refs) {
+      const error = new Error('нельзя публиковать без front + ¾ reference и основания прав');
       error.statusCode = 409;
       throw error;
     }
@@ -348,37 +349,51 @@ export function setWheelVisibility({ variantId, visible, actorUserId }) {
   return { id: variantId, visible: Boolean(visible) };
 }
 
-export function createWheelCatalogEntry({ brand, brandSlug, isOem = false, model, modelSlug, variant, actorUserId }) {
+function insertWheelCatalogEntry({ brand, brandSlug, isOem = false, model, modelSlug, variant, actorUserId }) {
   const brandId = randomUUID();
   const modelId = randomUUID();
   const variantId = randomUUID();
+  const existingBrand = db.prepare('SELECT id FROM wheel_brands WHERE slug = ?').get(brandSlug);
+  const selectedBrandId = existingBrand?.id || brandId;
+  if (!existingBrand) {
+    db.prepare(`INSERT INTO wheel_brands (id, slug, name, is_oem, visible, created_at) VALUES (?, ?, ?, ?, 1, ?)`)
+      .run(brandId, brandSlug, brand, isOem ? 1 : 0, now());
+  }
+  const existingModel = db.prepare('SELECT id FROM wheel_models WHERE brand_id = ? AND slug = ?').get(selectedBrandId, modelSlug);
+  const selectedModelId = existingModel?.id || modelId;
+  if (!existingModel) {
+    db.prepare(`INSERT INTO wheel_models
+      (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity,
+       image_rights_source, image_rights_basis, visible, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`)
+      .run(modelId, selectedBrandId, modelSlug, model, variant.supplier || null,
+        variant.priceCents ?? null, variant.affiliateLink || null, variant.popularity || 0,
+        variant.rightsSource, variant.rightsBasis, now());
+  }
+  db.prepare(`INSERT INTO wheel_variants
+    (id, model_id, size_label, diameter, color, finish, bolt_pattern, offset, center_bore, visible, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`)
+    .run(variantId, selectedModelId, variant.sizeLabel, variant.diameter, variant.color, variant.finish,
+      variant.boltPattern || null, variant.offset ?? null, variant.centerBore ?? null, now());
+  writeAuditLog({ actorUserId, action: 'wheel.create', entityType: 'wheel_variant', entityId: variantId });
+  return { id: variantId, visible: false };
+}
+
+export function createWheelCatalogEntry(entry) {
   db.exec('BEGIN');
   try {
-    const existingBrand = db.prepare('SELECT id FROM wheel_brands WHERE slug = ?').get(brandSlug);
-    const selectedBrandId = existingBrand?.id || brandId;
-    if (!existingBrand) {
-      db.prepare(`INSERT INTO wheel_brands (id, slug, name, is_oem, visible, created_at) VALUES (?, ?, ?, ?, 1, ?)`)
-        .run(brandId, brandSlug, brand, isOem ? 1 : 0, now());
-    }
-    const existingModel = db.prepare('SELECT id FROM wheel_models WHERE brand_id = ? AND slug = ?').get(selectedBrandId, modelSlug);
-    const selectedModelId = existingModel?.id || modelId;
-    if (!existingModel) {
-      db.prepare(`INSERT INTO wheel_models
-        (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity,
-         image_rights_source, image_rights_basis, visible, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`)
-        .run(modelId, selectedBrandId, modelSlug, model, variant.supplier || null,
-          variant.priceCents ?? null, variant.affiliateLink || null, variant.popularity || 0,
-          variant.rightsSource, variant.rightsBasis, now());
-    }
-    db.prepare(`INSERT INTO wheel_variants
-      (id, model_id, size_label, diameter, color, finish, bolt_pattern, offset, center_bore, visible, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`)
-      .run(variantId, selectedModelId, variant.sizeLabel, variant.diameter, variant.color, variant.finish,
-        variant.boltPattern || null, variant.offset ?? null, variant.centerBore ?? null, now());
-    writeAuditLog({ actorUserId, action: 'wheel.create', entityType: 'wheel_variant', entityId: variantId });
+    const result = insertWheelCatalogEntry(entry);
     db.exec('COMMIT');
-    return { id: variantId, visible: false };
+    return result;
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+}
+
+export function importWheelCatalogEntries(entries) {
+  db.exec('BEGIN');
+  try {
+    const results = entries.map(insertWheelCatalogEntry);
+    db.exec('COMMIT');
+    return results;
   } catch (error) {
     db.exec('ROLLBACK');
     throw error;

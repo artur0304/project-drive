@@ -30,7 +30,20 @@ db.addWheelReferenceImage({
   variantId: created.id, url: '/wheel-uploads/test.png', mimeType: 'image/png', width: 512, height: 512,
   hasAlpha: true, angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Owned photo', actorUserId: user.id,
 });
+assert.throws(() => db.setWheelVisibility({ variantId: created.id, visible: true, actorUserId: user.id }), /¾ reference/);
+db.addWheelReferenceImage({
+  variantId: created.id, url: '/wheel-uploads/test-3q.png', mimeType: 'image/png', width: 512, height: 512,
+  hasAlpha: true, angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Owned photo', actorUserId: user.id,
+});
 assert.equal(db.setWheelVisibility({ variantId: created.id, visible: true, actorUserId: user.id }).visible, true);
 assert.ok(db.listAuditLog().some((entry) => entry.action === 'wheel.publish'));
 
-console.log('✅ Каталог фильтруется и листается курсором; избранное, recent и юридический publish-guard работают.');
+const beforeImport = db.listAdminWheels().length;
+const duplicateEntry = {
+  brand: 'Batch Brand', brandSlug: 'batch-brand', model: 'Batch One', modelSlug: 'batch-one', actorUserId: user.id,
+  variant: { sizeLabel: 'R19', diameter: 19, color: 'Black', finish: 'Gloss', rightsSource: 'Own', rightsBasis: 'Owned' },
+};
+assert.throws(() => db.importWheelCatalogEntries([duplicateEntry, duplicateEntry]));
+assert.equal(db.listAdminWheels().length, beforeImport);
+
+console.log('✅ Каталог листается курсором; персональные списки, атомарный импорт и publish-guard двух ракурсов работают.');
