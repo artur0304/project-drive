@@ -19,6 +19,7 @@ import { GenerationOrchestrator } from "../orchestrator";
 import { ProviderRegistry } from "../providers";
 import { MockAIProvider } from "../providers/mockProvider";
 import { SpendGuard } from "../budget";
+import { persistOutputArtifact } from "./artifacts";
 import {
   RUBRIC_CRITERIA,
   RubricScore,
@@ -43,8 +44,10 @@ export interface BakeoffCandidate {
 }
 
 export interface BakeoffRow {
+  renderId: string;
   caseId: string;
   photoLabel: string;
+  sourceImage: string;
   operationKinds: OperationKind[];
   candidate: string;
   provider: string;
@@ -88,6 +91,7 @@ export async function runBakeoff(
     }),
   }));
   const rows: BakeoffRow[] = [];
+  fs.mkdirSync(outDir, { recursive: true });
 
   for (const c of cases) {
     for (const { candidate, orchestrator } of runners) {
@@ -96,9 +100,15 @@ export async function runBakeoff(
         operations: c.operations,
       };
       const res = await orchestrator.run(req);
+      const renderId = `render-${String(rows.length + 1).padStart(4, "0")}`;
+      const outputImage = res.ok && res.outputImage
+        ? await persistOutputArtifact(res.outputImage, outDir, renderId)
+        : undefined;
       rows.push({
+        renderId,
         caseId: c.caseId,
         photoLabel: c.photoLabel,
+        sourceImage: c.sourceImage,
         operationKinds: c.operations.map((o) => o.kind),
         candidate: candidate.label,
         provider: res.providerUsed ?? "(none)",
@@ -107,18 +117,19 @@ export async function runBakeoff(
         totalLatencyMs: res.totalLatencyMs,
         totalInternalCostUsd: res.totalInternalCostUsd,
         failureReason: res.failureReason,
-        outputImage: res.outputImage,
+        outputImage,
       });
     }
   }
 
-  fs.mkdirSync(outDir, { recursive: true });
   // 1) сырой JSON
   fs.writeFileSync(path.join(outDir, "bakeoff_results.json"), JSON.stringify(rows, null, 2));
   // 2) CSV сводка по стоимости/латентности
   writeCsv(rows, path.join(outDir, "bakeoff_results.csv"));
   // 3) пустой scoring-шаблон для ручной оценки качества
   writeScoringTemplate(rows, path.join(outDir, "bakeoff_scoring_template.json"));
+  // 4) имя кандидата скрыто от оценщика и раскрывается отдельным ключом.
+  writeBlindKey(rows, path.join(outDir, "bakeoff_blind_key.json"));
   fs.writeFileSync(path.join(outDir, "bakeoff_run_manifest.json"), JSON.stringify({
     mode: safety.allowPaidProviders ? "paid-enabled" : "mock-only",
     ...spendGuard.snapshot(),
@@ -134,12 +145,13 @@ export async function runBakeoff(
 
 function writeCsv(rows: BakeoffRow[], file: string) {
   const header = [
-    "caseId", "photoLabel", "operations", "candidate", "provider",
+    "renderId", "caseId", "photoLabel", "operations", "candidate", "provider",
     "ok", "attempts", "latencyMs", "internalCostUsd", "failureReason",
   ].join(",");
   const body = rows
     .map((r) =>
       [
+        r.renderId,
         r.caseId,
         `"${r.photoLabel}"`,
         `"${r.operationKinds.join("+")}"`,
@@ -161,13 +173,25 @@ function writeScoringTemplate(rows: BakeoffRow[], file: string) {
   const template = rows
     .filter((r) => r.ok) // оцениваем только успешные рендеры
     .map((r) => ({
+      renderId: r.renderId,
       caseId: r.caseId,
-      candidate: r.candidate,
-      provider: r.provider,
       operationKinds: r.operationKinds,
+      sourceImage: r.sourceImage,
+      outputImage: r.outputImage,
       scores: Object.fromEntries(RUBRIC_CRITERIA.map((c) => [c, null])) as RubricScore,
+      note: "",
     }));
   fs.writeFileSync(file, JSON.stringify(template, null, 2));
+}
+
+function writeBlindKey(rows: BakeoffRow[], file: string) {
+  const key = rows.map((row) => ({
+    renderId: row.renderId,
+    caseId: row.caseId,
+    candidate: row.candidate,
+    provider: row.provider,
+  }));
+  fs.writeFileSync(file, JSON.stringify(key, null, 2));
 }
 
 /** Сводка по стоимости — это часть Slice 0 go/no-go по деньгам. */
