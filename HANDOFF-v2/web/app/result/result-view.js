@@ -21,6 +21,8 @@ export default function ResultView({ versionId }) {
   const [reportReason, setReportReason] = useState('artifacts');
   const [reportNote, setReportNote] = useState('');
   const [reportStatus, setReportStatus] = useState('');
+  const [sharePath, setSharePath] = useState('');
+  const [shareStatus, setShareStatus] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +96,31 @@ export default function ResultView({ versionId }) {
     }
   }
 
+  async function enableShare() {
+    const token = getToken();
+    if (!token) return setShareStatus('Sign in to create a public link.');
+    setShareStatus('Creating…');
+    try {
+      const share = await apiRequest(`/api/versions/${encodeURIComponent(result.versionId)}/share`, { method: 'POST', token, body: { enabled: true } });
+      setSharePath(share.path); setShareStatus('Public preview enabled.');
+    } catch (error) { setShareStatus(error.message); }
+  }
+
+  async function copyShare() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${sharePath}`);
+      setShareStatus('Link copied.');
+    } catch { setShareStatus(`Copy this link: ${window.location.origin}${sharePath}`); }
+  }
+
+  async function disableShare() {
+    const token = getToken();
+    try {
+      await apiRequest(`/api/versions/${encodeURIComponent(result.versionId)}/share`, { method: 'POST', token, body: { enabled: false } });
+      setSharePath(''); setShareStatus('Public preview disabled.');
+    } catch (error) { setShareStatus(error.message); }
+  }
+
   if (status === 'loading') return <main className="resultEmpty"><h1>Loading result…</h1></main>;
   if (status === 'error' || !result) {
     return <main className="resultEmpty"><h1>Result unavailable</h1><p>{loadError}</p><button type="button" onClick={() => router.push('/garage')}>Open garage</button></main>;
@@ -124,11 +151,13 @@ export default function ResultView({ versionId }) {
         <input aria-label="Compare before and after" type="range" min="0" max="100" value={compare} onChange={(event) => setCompare(Number(event.target.value))} />
       </section>
       <section className="resultActions">
-        <a className="primaryResultAction" href={result.outputUrl} download>Download</a>
+        <a className="primaryResultAction" href={result.outputUrl} download>Download without watermark</a>
         <button type="button" onClick={continueEditing} disabled={isPreparing}>Regenerate</button>
         <button type="button" onClick={continueEditing} disabled={isPreparing}>Duplicate as new variation</button>
+        {!sharePath ? <button type="button" onClick={enableShare}>Create public link</button> : <><button type="button" onClick={copyShare}>Copy public link</button><button type="button" onClick={disableShare}>Turn link off</button></>}
         <button className="reportButton" type="button" onClick={() => setShowReport((current) => !current)}>Report bad result</button>
       </section>
+      {shareStatus && <p className="shareStatus" role="status">{shareStatus}</p>}
       {showReport && <form className="reportPanel" onSubmit={submitReport}>
         <div><span>MANUAL REVIEW</span><strong>What went wrong?</strong><small>This local report does not refund credits automatically.</small></div>
         <label>Reason<select value={reportReason} onChange={(event) => setReportReason(event.target.value)}><option value="artifacts">Visible artifacts</option><option value="car_changed">The car changed</option><option value="wheels_wrong">Wheels are incorrect</option><option value="wrap_wrong">Wrap is incorrect</option><option value="tint_wrong">Tint is incorrect</option><option value="other">Other</option></select></label>

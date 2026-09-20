@@ -213,6 +213,12 @@ export const server = createServer(async (req, res) => {
       return send(res, 200, { operations: PRICE });
     }
 
+    const publicShareMatch = path.match(/^\/api\/public\/results\/([a-f0-9]{64})$/i);
+    if (method === 'GET' && publicShareMatch) {
+      const shared = db.getPublicShare(publicShareMatch[1]);
+      return shared ? send(res, 200, shared) : send(res, 404, { error: 'публичная ссылка выключена или не существует' });
+    }
+
     // --- каталог дисков: публичное чтение, персональные списки после входа ---
     if (method === 'GET' && path === '/api/wheels') {
       const result = db.listWheels({
@@ -385,6 +391,22 @@ export const server = createServer(async (req, res) => {
       // Жалоба лишь ставит версию в очередь на ручную проверку. Баланс здесь
       // не меняем: решение о возврате будет отдельным действием администратора.
       return send(res, 201, db.createResultReport({ versionId, userId: user.id, reason, note: cleanNote || null }));
+    }
+
+    const shareMatch = path.match(/^\/api\/versions\/([^/]+)\/share$/);
+    if (method === 'POST' && shareMatch) {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const versionId = decodeURIComponent(shareMatch[1]);
+      const version = db.getVersion(versionId);
+      const project = version ? db.getProject(version.project_id) : null;
+      if (!version || !project || project.user_id !== user.id) return send(res, 404, { error: 'версия не найдена' });
+      const { enabled } = await readBody(req);
+      if (enabled === true) {
+        const share = db.enablePublicShare(versionId);
+        return send(res, 200, { ...share, path: `/share/${share.token}` });
+      }
+      return send(res, 200, db.disablePublicShare(versionId));
     }
 
     // --- кошелёк — только свой, пользователь из пропуска ---

@@ -170,6 +170,40 @@ export function getVersion(id) {
   return db.prepare('SELECT * FROM project_versions WHERE id = ?').get(id) ?? null;
 }
 
+export function enablePublicShare(versionId) {
+  const existing = db.prepare('SELECT * FROM public_result_shares WHERE version_id = ?').get(versionId);
+  if (existing) {
+    db.prepare('UPDATE public_result_shares SET enabled = 1, disabled_at = NULL WHERE id = ?').run(existing.id);
+    return { token: existing.token, enabled: true };
+  }
+  const token = `${randomUUID().replaceAll('-', '')}${randomUUID().replaceAll('-', '')}`;
+  db.prepare(`INSERT INTO public_result_shares (id, version_id, token, enabled, created_at)
+    VALUES (?, ?, ?, 1, ?)`).run(randomUUID(), versionId, token, now());
+  return { token, enabled: true };
+}
+
+export function disablePublicShare(versionId) {
+  const result = db.prepare('UPDATE public_result_shares SET enabled = 0, disabled_at = ? WHERE version_id = ?').run(now(), versionId);
+  return { enabled: false, changed: Boolean(result.changes) };
+}
+
+export function getPublicShare(token) {
+  const row = db.prepare(`SELECT s.token, v.id AS version_id, v.config_json, v.output_url,
+      v.status, v.warning, v.created_at, p.name AS project_name
+    FROM public_result_shares s
+    JOIN project_versions v ON v.id = s.version_id
+    JOIN car_projects p ON p.id = v.project_id
+    WHERE s.token = ? AND s.enabled = 1`).get(token);
+  if (!row) return null;
+  let operations = [];
+  try { operations = JSON.parse(row.config_json || '[]'); } catch { /* Не раскрываем повреждённый JSON. */ }
+  return {
+    token: row.token, versionId: row.version_id, projectName: row.project_name,
+    operations, outputUrl: row.output_url, generationStatus: row.status,
+    warning: row.warning, createdAt: row.created_at,
+  };
+}
+
 export function createResultReport({ versionId, userId, reason, note = null }) {
   const existing = db.prepare('SELECT * FROM result_reports WHERE version_id = ?').get(versionId);
   if (existing) return { ...existing, already: true };

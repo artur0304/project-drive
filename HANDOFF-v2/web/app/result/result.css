@@ -25,6 +25,7 @@
 .compareLine span { width:34px; height:34px; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border:1px solid #F1EEE8; border-radius:50%; background:#171B22; }
 .compareStage input { position:absolute; z-index:4; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:ew-resize; }
 .resultActions { max-width:1180px; margin:16px auto 0; }
+.shareStatus { max-width:1180px; margin:10px auto 0; color:#9A9EA5; font-size:11px; }
 .resultActions .primaryResultAction { border-color:#E5533B; background:#E5533B; color:#180A06; }
 .resultActions .reportButton { margin-left:auto; color:#A5A9AF; }
 .reportPanel { max-width:1180px; display:grid; grid-template-columns:1.2fr 1fr 1.4fr auto; align-items:end; gap:16px; margin:14px auto 0; padding:18px; border:1px solid #343A44; border-radius:12px; background:#14171D; }
