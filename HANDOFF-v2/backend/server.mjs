@@ -56,6 +56,7 @@ function tokenFrom(req) {
 
 const PORT = Number(process.env.PROJECT_DRIVE_PORT || 3000);
 const HOST = '127.0.0.1';
+const MOCK_PAYMENTS_ENABLED = process.env.PROJECT_DRIVE_ENABLE_MOCK_PAYMENTS === '1';
 
 // Пока настоящий платёжный провайдер не подключён, webhook разрешён только
 // процессам на этом компьютере. Внешний запрос не сможет начислить кредиты.
@@ -292,6 +293,7 @@ export const server = createServer(async (req, res) => {
     // В ПРОДЕ здесь же создаётся checkout-сессия у платёжки (Lemon Squeezy/Paddle)
     // и возвращается ЕЁ ссылка, куда уходит человек платить. Сейчас — заглушка-ссылка.
     if (method === 'POST' && path === '/api/checkout') {
+      if (!MOCK_PAYMENTS_ENABLED) return send(res, 503, { error: 'покупка кредитов отключена до выбора платёжного провайдера' });
       const user = auth.checkSession(tokenFrom(req));
       if (!user) return send(res, 401, { error: 'нужен вход' });
       const { packId } = await readBody(req);
@@ -307,6 +309,7 @@ export const server = createServer(async (req, res) => {
     // В ПРОДЕ этот маршрут вызывает САМА платёжка (webhook), и НАЧАЛО должно
     // ПРОВЕРЯТЬ подпись запроса, иначе кто угодно сможет "начислить" себе кредиты.
     if (method === 'POST' && path === '/api/webhook/payment') {
+      if (!MOCK_PAYMENTS_ENABLED) return send(res, 404, { error: 'маршрут не найден' });
       if (!isLoopbackRequest(req)) return send(res, 404, { error: 'маршрут не найден' });
       // TODO(prod): здесь ОБЯЗАТЕЛЬНО проверить подпись вебхука от платёжки:
       //   const sig = req.headers['x-signature']; if(!verifySignature(rawBody, sig)) return 401;

@@ -39,7 +39,22 @@ try {
     body: JSON.stringify({ email: `${'a'.repeat(70 * 1024)}@example.com`, password: 'secret123' }),
   })).status, 413);
 
-  console.log('✅ Legacy-маршруты закрыты, uploads и размер JSON ограничены.');
+  const registration = await fetch(`${base}/api/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'payment-guard@example.com', password: 'secret123' }),
+  });
+  assert.equal(registration.status, 201);
+  const { token } = await registration.json();
+  assert.equal((await fetch(`${base}/api/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ packId: 'starter' }),
+  })).status, 503);
+  assert.equal((await fetch(`${base}/api/webhook/payment`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  })).status, 404);
+
+  console.log('✅ Legacy-маршруты, uploads, JSON и mock-платежи защищены.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
