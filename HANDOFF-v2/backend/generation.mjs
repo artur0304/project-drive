@@ -95,7 +95,9 @@ async function runProvider(args) {
 //   3) вызвать AI (заглушку)
 //   4) успех -> сохранить версию;  провал -> ВЕРНУТЬ кредиты (не берём за брак)
 // ============================================================================
-export async function generateForProject({ db, userId, projectId, operations, forceFail = false }) {
+export async function generateForProject({
+  db, userId, projectId, operations, forceFail = false, provider = runProvider,
+}) {
   const validation = validateOperations(operations);
   if (!validation.ok) return { ok: false, code: 400, error: validation.error };
   const safeOperations = validation.operations;
@@ -113,18 +115,37 @@ export async function generateForProject({ db, userId, projectId, operations, fo
   const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
   if (!paid) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
 
+  let refunded = false;
+  function refund(reason) {
+    if (refunded) return;
+    db.addCredits({ userId, amount: cost, reason });
+    refunded = true;
+  }
+
   // 3) берём исходное фото проекта (последнее загруженное) и зовём AI-заглушку
-  const result = await runProvider({ sourceImage: asset.url, operations: safeOperations, forceFail });
+  let result;
+  try {
+    result = await provider({ sourceImage: asset.url, operations: safeOperations, forceFail });
+  } catch {
+    refund('refund:provider_error');
+    return { ok: false, code: 502, error: 'провайдер недоступен, кредиты возвращены' };
+  }
 
   // 4a) провал -> возвращаем кредиты обратно, версию не создаём
   if (!result.ok) {
-    db.addCredits({ userId, amount: cost, reason: 'refund:generate_failed' });
+    refund('refund:generate_failed');
     return { ok: false, code: 502, error: 'генерация не удалась, кредиты возвращены' };
   }
 
   // 4b) успех -> сохраняем версию (неизменный снимок настроек + результат)
-  const versionId = db.createVersion({
-    projectId, config: safeOperations, outputUrl: result.outputImage, creditsCharged: cost,
-  });
+  let versionId;
+  try {
+    versionId = db.createVersion({
+      projectId, config: safeOperations, outputUrl: result.outputImage, creditsCharged: cost,
+    });
+  } catch {
+    refund('refund:save_failed');
+    return { ok: false, code: 500, error: 'результат не удалось сохранить, кредиты возвращены' };
+  }
   return { ok: true, versionId, creditsCharged: cost, outputUrl: result.outputImage };
 }

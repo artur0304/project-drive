@@ -52,6 +52,24 @@ assert.equal(failed.code, 502);
 assert.equal(db.getWallet(user.id).balance, beforeFailure, 'кредиты должны вернуться после сбоя');
 assert.equal(db.listVersions(project.id).length, 0, 'неудачная генерация не создаёт версию');
 
+const providerCrash = await generateForProject({
+  db, userId: user.id, projectId: project.id,
+  operations: [{ kind: 'wrap', color: 'Green', finish: 'Satin' }],
+  provider: async () => { throw new Error('provider offline'); },
+});
+assert.equal(providerCrash.code, 502);
+assert.equal(db.getWallet(user.id).balance, beforeFailure, 'после исключения провайдера нужен возврат');
+
+const saveCrash = await generateForProject({
+  db: { ...db, createVersion: () => { throw new Error('disk full'); } },
+  userId: user.id, projectId: project.id,
+  operations: [{ kind: 'wrap', color: 'Green', finish: 'Satin' }],
+  provider: async ({ sourceImage }) => ({ ok: true, outputImage: sourceImage, costUsd: 0 }),
+});
+assert.equal(saveCrash.code, 500);
+assert.equal(db.getWallet(user.id).balance, beforeFailure, 'при ошибке сохранения нужен возврат');
+assert.equal(db.listVersions(project.id).length, 0);
+
 const succeeded = await generateForProject({
   db, userId: user.id, projectId: project.id,
   operations: [{ kind: 'wrap', color: 'Green', finish: 'Satin' }],
