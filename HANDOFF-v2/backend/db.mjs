@@ -226,6 +226,8 @@ db.exec(`
     paid_at      TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+  CREATE INDEX IF NOT EXISTS idx_orders_user_status
+    ON orders(user_id, status, created_at DESC);
 `);
 
 export function createOrder({ userId, packId, credits, amountCents }) {

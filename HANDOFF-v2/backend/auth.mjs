@@ -39,6 +39,8 @@ db.exec(`
     created_at  TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+  CREATE INDEX IF NOT EXISTS idx_sessions_user_created
+    ON sessions(user_id, created_at DESC);
 `);
 
 // Сделать "отпечаток" пароля: генерируем случайную "соль" и хэшируем пароль с ней.

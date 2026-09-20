@@ -82,3 +82,18 @@ CREATE TABLE IF NOT EXISTS result_reports (
   FOREIGN KEY (version_id) REFERENCES project_versions(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Индексы соответствуют реальным спискам приложения: Garage, версии, исходники,
+-- журнал кредитов и будущая очередь ручной проверки.
+CREATE INDEX IF NOT EXISTS idx_users_email_nocase
+  ON users(email COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_car_projects_user_created
+  ON car_projects(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_source_assets_project_created
+  ON source_assets(project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_project_versions_project_created
+  ON project_versions(project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_created
+  ON credit_transactions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_result_reports_user_status
+  ON result_reports(user_id, status, created_at DESC);

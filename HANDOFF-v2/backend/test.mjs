@@ -7,6 +7,8 @@
 // Тест использует базу только в памяти и не касается локального projectdrive.db.
 process.env.PROJECT_DRIVE_DB_PATH = ':memory:';
 
+import assert from 'node:assert/strict';
+
 const db = await import('./db.mjs');
 
 console.log('1) Создаём пользователя…');
@@ -37,4 +39,25 @@ console.log('   списание прошло:', tooMuch, '(ожидаем false
 console.log('7) История кредитов:');
 for (const t of db.listTransactions(user.id)) console.log('   ', (t.delta > 0 ? '+' : '') + t.delta, t.reason);
 
-console.log('\n✅ Всё отработало. База пишет и читает корректно, минус не допускается.');
+console.log('8) Проверяем внешние ключи, индексы и каскадное удаление…');
+assert.equal(db.default.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
+for (const indexName of [
+  'idx_car_projects_user_created',
+  'idx_source_assets_project_created',
+  'idx_project_versions_project_created',
+  'idx_credit_transactions_user_created',
+]) {
+  assert.equal(
+    db.default.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?").get(indexName)?.name,
+    indexName,
+  );
+}
+db.default.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+assert.equal(db.getProject(project.id), null);
+assert.equal(db.getLatestSourceAsset(project.id), null);
+assert.equal(db.listVersions(project.id).length, 0);
+assert.equal(db.getWallet(user.id), null);
+assert.equal(db.listTransactions(user.id).length, 0);
+console.log('   связи включены, индексы созданы, дочерние записи удалены.');
+
+console.log('\n✅ База пишет, индексирует и удаляет связанные данные корректно; минус не допускается.');
