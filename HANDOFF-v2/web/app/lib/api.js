@@ -1,4 +1,4 @@
-import { getToken } from './storage';
+import { clearToken, getToken } from './storage.js';
 
 // Единая обёртка над fetch: добавляет локальный токен, кодирует JSON и всегда
 // превращает ошибочный ответ API в понятный Error для интерфейса.
@@ -20,6 +20,10 @@ export async function apiRequest(path, {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    // 401 означает, что сервер больше не признаёт локальный пропуск. Очищаем
+    // его централизованно, чтобы все страницы одинаково предлагали войти снова.
+    // 402 (не хватает кредитов) и другие ошибки сессию не затрагивают.
+    if (response.status === 401) clearToken();
     const error = new Error(data.error || `Request failed (${response.status})`);
     error.status = response.status;
     error.data = data;
