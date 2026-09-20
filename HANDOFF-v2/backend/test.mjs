@@ -4,9 +4,8 @@
 // и печатает результат. Так мы убеждаемся, что база работает.
 // Запуск: node --experimental-sqlite test.mjs
 // ============================================================================
-import { rmSync } from 'node:fs';
-// начнём с чистого листа, чтобы тест был честным (удаляем старый файл базы)
-try { rmSync(new URL('./projectdrive.db', import.meta.url)); } catch {}
+// Тест использует базу только в памяти и не касается локального projectdrive.db.
+process.env.PROJECT_DRIVE_DB_PATH = ':memory:';
 
 const db = await import('./db.mjs');
 

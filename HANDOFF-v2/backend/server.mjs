@@ -12,7 +12,8 @@
 //   POST /api/projects     {userId,name} — создать проект (машину)
 //   GET  /api/projects?userId=…          — проекты пользователя
 //   GET  /api/wallet?userId=…            — баланс кредитов
-//   POST /api/wallet/add   {userId,amount,reason} — начислить кредиты (dev)
+// Демонстрационные кредиты добавляются только ручным scripts/seed-credits.mjs;
+// браузерного маршрута пополнения нет.
 //
 // ДЛЯ CODEX: это учебный сервер на голом http. В реальном проекте по плану —
 // Next.js API routes. Логику (что делает каждый маршрут) можно перенести 1:1,
@@ -24,10 +25,10 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import sharp from 'sharp';
 import * as db from './db.mjs';
 import * as auth from './auth.mjs';   // вход/регистрация
-import { generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
+import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
+import { normalizeUploadedImage } from './image-normalizer.mjs';
 
 // папка, куда складываем загруженные фото (создаётся сама)
 const UP = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
@@ -54,16 +55,13 @@ function tokenFrom(req) {
 }
 
 const PORT = 3000;
+const HOST = '127.0.0.1';
 
-// Нормализуем пользовательскую фотографию до безопасного JPEG:
-// rotate() применяет ориентацию EXIF, а отсутствие withMetadata() удаляет EXIF,
-// GPS, ICC-комментарии и прочие метаданные из выходного файла.
-async function normalizeUploadedImage(buffer) {
-  return sharp(buffer, { failOn: 'error', limitInputPixels: 80_000_000 })
-    .rotate()
-    .resize({ width: 4096, height: 4096, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 92, mozjpeg: true })
-    .toBuffer();
+// Пока настоящий платёжный провайдер не подключён, webhook разрешён только
+// процессам на этом компьютере. Внешний запрос не сможет начислить кредиты.
+function isLoopbackRequest(req) {
+  const address = req.socket.remoteAddress || '';
+  return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
 // Помощник: прочитать JSON-тело запроса (то, что прислал браузер).
@@ -90,6 +88,12 @@ const server = createServer(async (req, res) => {
     // --- проверка живости ---
     if (method === 'GET' && path === '/api/health') {
       return send(res, 200, { ok: true, service: 'project-drive-backend' });
+    }
+
+    // Единственный публичный источник цен операций. Клиент показывает эти
+    // значения, но при генерации сервер всё равно пересчитывает сумму сам.
+    if (method === 'GET' && path === '/api/pricing') {
+      return send(res, 200, { operations: PRICE });
     }
 
     // --- пользователи ---
@@ -141,6 +145,31 @@ const server = createServer(async (req, res) => {
       return send(res, 200, db.listVersions(projectId));
     }
 
+    // Одна сохранённая версия для прямой ссылки /result/:versionId.
+    // Отдаём её только владельцу проекта и сразу добавляем исходную фотографию.
+    if (method === 'GET' && path.match(/^\/api\/versions\/[^/]+$/)) {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const versionId = decodeURIComponent(path.split('/')[3]);
+      const version = db.getVersion(versionId);
+      const project = version ? db.getProject(version.project_id) : null;
+      if (!version || !project || project.user_id !== user.id) return send(res, 404, { error: 'версия не найдена' });
+
+      let operations = [];
+      try { operations = JSON.parse(version.config_json || '[]'); } catch { /* Старую повреждённую запись покажем без операций. */ }
+      const source = db.getLatestSourceAsset(project.id);
+      return send(res, 200, {
+        id: version.id,
+        projectId: project.id,
+        projectName: project.name,
+        operations,
+        sourceUrl: source?.url || null,
+        outputUrl: version.output_url || source?.url || null,
+        creditsCharged: version.credits_charged,
+        createdAt: version.created_at,
+      });
+    }
+
     if (method === 'POST' && path.match(/^\/api\/versions\/[^/]+\/report$/)) {
       const user = auth.checkSession(tokenFrom(req));
       if (!user) return send(res, 401, { error: 'нужен вход' });
@@ -170,16 +199,6 @@ const server = createServer(async (req, res) => {
       // История, как и баланс, берётся только для владельца текущей сессии.
       return send(res, 200, db.listTransactions(user.id));
     }
-    if (method === 'POST' && path === '/api/wallet/add') {
-      // временный помощник для разработки: пополнить СВОЙ баланс.
-      // В проде пополнение будет только по факту оплаты (вебхук платёжки), не так.
-      const user = auth.checkSession(tokenFrom(req));
-      if (!user) return send(res, 401, { error: 'нужен вход' });
-      const { amount, reason = 'manual' } = await readBody(req);
-      const balance = db.addCredits({ userId: user.id, amount, reason });
-      return send(res, 200, { userId: user.id, balance });
-    }
-
     // --- вход / регистрация ---
     if (method === 'POST' && path === '/api/auth/register') {
       const { email, password, name } = await readBody(req);
@@ -276,6 +295,7 @@ const server = createServer(async (req, res) => {
     // В ПРОДЕ этот маршрут вызывает САМА платёжка (webhook), и НАЧАЛО должно
     // ПРОВЕРЯТЬ подпись запроса, иначе кто угодно сможет "начислить" себе кредиты.
     if (method === 'POST' && path === '/api/webhook/payment') {
+      if (!isLoopbackRequest(req)) return send(res, 404, { error: 'маршрут не найден' });
       // TODO(prod): здесь ОБЯЗАТЕЛЬНО проверить подпись вебхука от платёжки:
       //   const sig = req.headers['x-signature']; if(!verifySignature(rawBody, sig)) return 401;
       // Без этого начислять кредиты НЕЛЬЗЯ. Сейчас (dev) подпись не проверяется.
@@ -303,7 +323,7 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Project Drive backend запущен: http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Project Drive backend запущен: http://${HOST}:${PORT}`);
   console.log('Проверка: открой http://localhost:3000/api/health');
 });

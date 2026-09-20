@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --experimental-sqlite test.mjs && node --experimental-sqlite test-auth.mjs && node --experimental-sqlite test-generation.mjs && node test-image-normalization.mjs"
+  },
   "dependencies": {
     "sharp": "0.35.4"
   }

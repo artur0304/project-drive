@@ -17,12 +17,17 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 
-// Открываем файл базы (создастся сам, если его нет). Это и есть наш "склад".
-const db = new DatabaseSync(join(__dir, 'projectdrive.db'));
+// Обычный запуск использует локальный файл. Тесты передают ':memory:', чтобы
+// никогда не удалять и не менять рабочую базу пользователя.
+const configuredPath = process.env.PROJECT_DRIVE_DB_PATH;
+const databasePath = configuredPath === ':memory:'
+  ? ':memory:'
+  : configuredPath ? resolve(configuredPath) : join(__dir, 'projectdrive.db');
+const db = new DatabaseSync(databasePath);
 
 // Включаем контроль связей между таблицами (чтобы нельзя было создать
 // проект без существующего пользователя и т.п.).

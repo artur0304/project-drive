@@ -2,8 +2,8 @@
 // test-auth.mjs — самопроверка входа. Ничего не устанавливает, не лезет в сеть.
 // Запуск: node --experimental-sqlite test-auth.mjs
 // ============================================================================
-import { rmSync } from 'node:fs';
-try { rmSync(new URL('./projectdrive.db', import.meta.url)); } catch {}
+// Тест использует базу только в памяти и не касается локального projectdrive.db.
+process.env.PROJECT_DRIVE_DB_PATH = ':memory:';
 
 const auth = await import('./auth.mjs');
 
