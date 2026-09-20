@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
-import { normalizeUploadedImage } from './image-normalizer.mjs';
+import { normalizeUploadedImage, validateVehiclePhoto, VehiclePhotoValidationError } from './image-normalizer.mjs';
 
 // Создаём фотографию с EXIF-ориентацией прямо в памяти. Так тест не зависит от
 // личных фотографий пользователя и всё равно доказывает удаление метаданных.
@@ -20,4 +20,13 @@ assert.equal(after.exif, undefined, 'EXIF не должен попасть в р
 assert.equal(after.iptc, undefined, 'IPTC не должен попасть в результат');
 assert.equal(after.xmp, undefined, 'XMP не должен попасть в результат');
 
-console.log('✅ Ориентация применена, EXIF/IPTC/XMP удалены из JPEG.');
+const validPhoto = await sharp({ create: { width: 1280, height: 960, channels: 3, background: '#45505e' } }).jpeg().toBuffer();
+assert.deepEqual(await validateVehiclePhoto(validPhoto), { width: 1280, height: 960, format: 'jpeg' });
+
+const thumbnail = await sharp({ create: { width: 320, height: 240, channels: 3, background: '#45505e' } }).jpeg().toBuffer();
+await assert.rejects(() => validateVehiclePhoto(thumbnail), (error) => error instanceof VehiclePhotoValidationError && error.code === 'too_small');
+
+const panorama = await sharp({ create: { width: 2000, height: 500, channels: 3, background: '#45505e' } }).jpeg().toBuffer();
+await assert.rejects(() => validateVehiclePhoto(panorama), (error) => error instanceof VehiclePhotoValidationError && error.code === 'extreme_aspect_ratio');
+
+console.log('✅ Ориентация и preflight проверены, EXIF/IPTC/XMP удалены из JPEG.');

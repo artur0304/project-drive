@@ -28,7 +28,7 @@ import { randomUUID } from 'node:crypto';
 import * as db from './db.mjs';
 import * as auth from './auth.mjs';   // вход/регистрация
 import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
-import { normalizeUploadedImage } from './image-normalizer.mjs';
+import { normalizeUploadedImage, validateVehiclePhoto, VehiclePhotoValidationError } from './image-normalizer.mjs';
 import { validateWheelReference } from './wheel-reference.mjs';
 
 // папка, куда складываем загруженные фото (создаётся сама)
@@ -484,6 +484,12 @@ export const server = createServer(async (req, res) => {
       if (!buf.length) return send(res, 400, { error: 'пустой файл' });
 
       const originalBytes = buf.length;
+      let preflight;
+      try { preflight = await validateVehiclePhoto(buf); }
+      catch (error) {
+        if (error instanceof VehiclePhotoValidationError) return send(res, 422, { error: error.message, code: error.code });
+        return send(res, 422, { error: 'изображение повреждено или этот вариант HEIC не поддерживается' });
+      }
       try { buf = await normalizeUploadedImage(buf); }
       catch { return send(res, 422, { error: 'изображение повреждено или этот вариант HEIC не поддерживается' }); }
 
@@ -491,7 +497,7 @@ export const server = createServer(async (req, res) => {
       const fname = randomUUID() + '.jpg';
       writeFileSync(join(UP, fname), buf);
       const assetId = db.addSourceAsset({ projectId: project.id, url: '/uploads/' + fname });
-      return send(res, 201, { id: assetId, url: '/uploads/' + fname, bytes: buf.length, originalBytes, normalized: true });
+      return send(res, 201, { id: assetId, url: '/uploads/' + fname, bytes: buf.length, originalBytes, normalized: true, preflight });
     }
 
     // --- раздача загруженных файлов (ТОЛЬКО для локальной разработки) ---
