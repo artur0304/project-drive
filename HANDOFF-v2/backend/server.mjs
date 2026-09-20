@@ -363,6 +363,9 @@ export const server = createServer(async (req, res) => {
         sourceUrl: source?.url || null,
         outputUrl: version.output_url || source?.url || null,
         creditsCharged: version.credits_charged,
+        plannedCredits: version.planned_credits,
+        generationStatus: version.status,
+        warning: version.warning,
         createdAt: version.created_at,
       });
     }

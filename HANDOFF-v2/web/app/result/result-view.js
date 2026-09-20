@@ -109,6 +109,7 @@ export default function ResultView({ versionId }) {
         <div><p className="resultEyebrow">Generated version</p><h1>{result.projectName || 'Your car'} — new variation</h1><p>{operationRows.map(([, value]) => value).join(' · ')}</p></div>
         <div className="resultTopActions"><button type="button" onClick={continueEditing} disabled={isPreparing}>{isPreparing ? 'Opening…' : 'Continue editing'}</button><button type="button" onClick={() => router.push('/garage')}>Open garage</button></div>
       </section>
+      {result.generationStatus === 'partial' && <section className="partialResultNotice" role="status"><strong>Partial result saved</strong><span>{result.warning} Charged {result.creditsCharged} of {result.plannedCredits} credits.</span></section>}
       {prepareError && <p className="resultError" role="alert">{prepareError}</p>}
       <section className="compareStage" aria-label="Before and after comparison">
         {/* Mock возвращает исходный файл, поэтому обе стороны сейчас одинаковые. */}

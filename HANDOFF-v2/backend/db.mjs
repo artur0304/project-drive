@@ -153,11 +153,12 @@ export function addSourceAsset({ projectId, url, type = 'photo' }) {
 }
 
 // Сохранить версию (вариант). config — объект с выбором (плёнка/тонировка/диски).
-export function createVersion({ projectId, config, outputUrl = null, creditsCharged = 0 }) {
+export function createVersion({ projectId, config, outputUrl = null, creditsCharged = 0, status = 'complete', warning = null, plannedCredits = creditsCharged }) {
   const id = randomUUID();
-  db.prepare(`INSERT INTO project_versions (id, project_id, config_json, output_url, credits_charged, created_at)
-              VALUES (?, ?, ?, ?, ?, ?)`)
-    .run(id, projectId, JSON.stringify(config), outputUrl, creditsCharged, now());
+  db.prepare(`INSERT INTO project_versions
+    (id, project_id, config_json, output_url, credits_charged, created_at, status, warning, planned_credits)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, projectId, JSON.stringify(config), outputUrl, creditsCharged, now(), status, warning, plannedCredits);
   return id;
 }
 

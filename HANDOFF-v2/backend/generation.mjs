@@ -1,4 +1,6 @@
 // ============================================================================
+
+import { planGeneration } from './generation-planner.mjs';
 // generation.mjs — "мозг" генерации на стороне сервера.
 // ----------------------------------------------------------------------------
 // Здесь считается ЦЕНА (на сервере, не доверяя клиенту), вызывается AI и
@@ -120,37 +122,62 @@ export async function generateForProject({
   const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
   if (!paid) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
 
-  let refunded = false;
-  function refund(reason) {
-    if (refunded) return;
-    db.addCredits({ userId, amount: cost, reason });
-    refunded = true;
+  let refunded = 0;
+  function refund(amount, reason) {
+    const safeAmount = Math.min(Math.max(0, amount), cost - refunded);
+    if (!safeAmount) return;
+    db.addCredits({ userId, amount: safeAmount, reason });
+    refunded += safeAmount;
   }
 
-  // 3) берём исходное фото проекта (последнее загруженное) и зовём AI-заглушку
-  let result;
-  try {
-    result = await provider({ sourceImage: asset.url, operations: safeOperations, forceFail });
-  } catch {
-    refund('refund:provider_error');
-    return { ok: false, code: 502, error: 'провайдер недоступен, кредиты возвращены' };
+  const plan = planGeneration(safeOperations, PRICE);
+  let currentImage = asset.url;
+  let completedCredits = 0;
+  const completedOperations = [];
+
+  for (let index = 0; index < plan.length; index += 1) {
+    const step = plan[index];
+    let result;
+    try {
+      result = await provider({ sourceImage: currentImage, operations: step.operations, forceFail, step });
+    } catch {
+      result = { ok: false, error: 'provider_error' };
+    }
+    if (!result.ok) {
+      refund(cost - completedCredits, result.error === 'provider_error' ? 'refund:provider_error' : 'refund:generate_failed');
+      if (!completedOperations.length) {
+        return { ok: false, code: 502, error: 'генерация не удалась, кредиты возвращены', refundedCredits: refunded };
+      }
+      try {
+        const versionId = db.createVersion({
+          projectId, config: completedOperations, outputUrl: currentImage, creditsCharged: completedCredits,
+          status: 'partial', warning: 'Часть изменений не выполнена; кредиты за неё возвращены.', plannedCredits: cost,
+        });
+        return {
+          ok: true, partial: true, versionId, outputUrl: currentImage,
+          creditsCharged: completedCredits, refundedCredits: refunded,
+          failedStep: step.id, warning: 'часть изменений не выполнена; кредиты за неё возвращены',
+        };
+      } catch {
+        refund(completedCredits, 'refund:save_failed');
+        return { ok: false, code: 500, error: 'частичный результат не удалось сохранить, все кредиты возвращены', refundedCredits: refunded };
+      }
+    }
+    currentImage = result.outputImage;
+    completedOperations.push(...step.operations);
+    completedCredits += step.credits;
   }
 
-  // 4a) провал -> возвращаем кредиты обратно, версию не создаём
-  if (!result.ok) {
-    refund('refund:generate_failed');
-    return { ok: false, code: 502, error: 'генерация не удалась, кредиты возвращены' };
-  }
-
-  // 4b) успех -> сохраняем версию (неизменный снимок настроек + результат)
+  // Все шаги успешны: сохраняем один неизменный снимок итоговой конфигурации.
   let versionId;
   try {
     versionId = db.createVersion({
-      projectId, config: safeOperations, outputUrl: result.outputImage, creditsCharged: cost,
+      projectId, config: safeOperations, outputUrl: currentImage, creditsCharged: cost,
+      status: 'complete', plannedCredits: cost,
     });
   } catch {
-    refund('refund:save_failed');
+    refund(cost, 'refund:save_failed');
     return { ok: false, code: 500, error: 'результат не удалось сохранить, кредиты возвращены' };
   }
-  return { ok: true, versionId, creditsCharged: cost, outputUrl: result.outputImage };
+  return { ok: true, versionId, creditsCharged: cost, outputUrl: currentImage, plan: plan.map((step) => step.id) };
 }
