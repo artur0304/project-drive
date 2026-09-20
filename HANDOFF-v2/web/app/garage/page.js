@@ -8,6 +8,7 @@ import {
   clearToken, getToken, setDraft, setProjectId, setUploadedProjectId,
 } from '../lib/storage';
 import { savePendingPhoto } from '../lib/pending-photo';
+import ProductNav from '../components/product-nav';
 import './garage.css';
 import './rename.css';
 
@@ -26,7 +27,6 @@ function readableDate(value) {
 export default function GaragePage() {
   const router = useRouter();
   const [status, setStatus] = useState('loading');
-  const [user, setUser] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export default function GaragePage() {
       }
 
       try {
-        const [me, walletData, projectRows] = await Promise.all([
+        const [, walletData, projectRows] = await Promise.all([
           apiRequest('/api/auth/me', { token }),
           apiRequest('/api/wallet', { token }),
           apiRequest('/api/projects', { token }),
@@ -55,7 +55,6 @@ export default function GaragePage() {
           versions: await apiRequest(`/api/versions?projectId=${encodeURIComponent(project.id)}`, { token }),
         })));
         if (cancelled) return;
-        setUser(me);
         setWallet(walletData);
         setProjects(completeProjects);
         setStatus('ready');
@@ -141,15 +140,7 @@ export default function GaragePage() {
 
   return (
     <main className="garagePage">
-      <header className="garageNav">
-        <a href="/" className="garageBrand"><span>PD</span>Project Drive</a>
-        <nav aria-label="Main navigation">
-          <a className="active" href="/garage">Garage</a>
-          <a href="/credits">Credits</a>
-          <a href="/account">Account</a>
-          <span>{wallet?.balance ?? 0} demo credits</span>
-        </nav>
-      </header>
+      <ProductNav active="garage" balance={wallet?.balance ?? 0} maxWidth="1200px" />
 
       <section className="garageHero">
         <div>

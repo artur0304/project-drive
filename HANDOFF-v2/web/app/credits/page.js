@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '../lib/api';
 import { clearToken, getToken } from '../lib/storage';
+import ProductNav from '../components/product-nav';
 import './credits.css';
 
 function labelForReason(reason) {
@@ -42,10 +43,7 @@ export default function CreditsPage() {
 
   return (
     <main className="creditPage">
-      <header className="creditNav">
-        <a href="/" className="creditBrand"><span>PD</span>Project Drive</a>
-        <nav><a href="/garage">Garage</a><a className="active" href="/credits">Credits</a><a href="/account">Account</a></nav>
-      </header>
+      <ProductNav active="credits" balance={state.wallet.balance} />
 
       <section className="creditHero">
         <div><p>LOCAL WALLET</p><h1>{state.wallet.balance}</h1><span>demo credits available</span></div>

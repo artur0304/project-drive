@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '../lib/api';
 import { clearSession, getToken } from '../lib/storage';
+import ProductNav from '../components/product-nav';
 import './account.css';
 
 export default function AccountPage() {
@@ -34,10 +35,7 @@ export default function AccountPage() {
   const initial = (data.user.name || data.user.email || 'P').slice(0, 1).toUpperCase();
   return (
     <main className="accountPage">
-      <header className="accountNav">
-        <a href="/" className="accountBrand"><span>PD</span>Project Drive</a>
-        <nav><a href="/garage">Garage</a><a href="/credits">Credits</a><a className="active" href="/account">Account</a></nav>
-      </header>
+      <ProductNav active="account" balance={data.wallet.balance} maxWidth="1050px" />
       <section className="accountHeader"><p>LOCAL PROFILE</p><h1>Account</h1><span>This profile exists only in the Project Drive database on this computer.</span></section>
       <section className="accountGrid">
         <article className="profileCard"><div className="avatar">{initial}</div><div><p>PROFILE</p><h2>{data.user.name || 'Project Drive user'}</h2><span>{data.user.email}</span></div></article>
