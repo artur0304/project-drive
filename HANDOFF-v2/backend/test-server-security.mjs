@@ -15,6 +15,9 @@ const base = `http://127.0.0.1:${address.port}`;
 try {
   const health = await fetch(`${base}/api/health`);
   assert.equal(health.status, 200);
+  assert.equal(health.headers.get('cache-control'), 'no-store');
+  assert.equal(health.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(health.headers.get('referrer-policy'), 'no-referrer');
 
   const pricing = await fetch(`${base}/api/pricing`);
   assert.equal(pricing.status, 200);

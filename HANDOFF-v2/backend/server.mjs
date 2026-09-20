@@ -126,7 +126,12 @@ function readBody(req, maxBytes = 64 * 1024) {
 
 // Помощник: отправить ответ в формате JSON.
 function send(res, status, obj) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+  });
   res.end(JSON.stringify(obj, null, 2));
 }
 
@@ -314,7 +319,12 @@ export const server = createServer(async (req, res) => {
       // использовать этот маршрут для чтения произвольного файла с диска.
       const f = join(UP, uploadMatch[1]);
       if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
-      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+      res.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'private, max-age=3600',
+        'X-Content-Type-Options': 'nosniff',
+        'Cross-Origin-Resource-Policy': 'same-origin',
+      });
       return res.end(readFileSync(f));
     }
 
