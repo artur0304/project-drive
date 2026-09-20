@@ -81,7 +81,7 @@ export interface GenerationResult {
   /** Суммарная задержка от старта до финального ответа (мс). */
   totalLatencyMs: number;
   /** Тип провала, если ok=false. */
-  failureReason?: "all_providers_failed" | "invalid_request";
+  failureReason?: "all_providers_failed" | "invalid_request" | "paid_provider_blocked" | "budget_exhausted";
 }
 
 /** Лог одной попытки у одного провайдера. */

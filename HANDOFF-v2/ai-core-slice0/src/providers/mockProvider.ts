@@ -20,6 +20,8 @@ export interface MockProviderOptions {
 
 export class MockAIProvider implements AICarEditProvider {
   readonly name: string;
+  readonly billingMode = "mock" as const;
+  readonly maxCostUsdPerCall: number;
   private failureRate: number;
   private latencyMsRange: [number, number];
   private costUsd: number;
@@ -29,6 +31,7 @@ export class MockAIProvider implements AICarEditProvider {
     this.failureRate = opts.failureRate ?? 0;
     this.latencyMsRange = opts.latencyMsRange ?? [200, 600];
     this.costUsd = opts.costUsd ?? 0.03;
+    this.maxCostUsdPerCall = this.costUsd;
   }
 
   async generateCarEdit(

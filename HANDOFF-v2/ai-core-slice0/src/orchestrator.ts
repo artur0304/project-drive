@@ -13,10 +13,13 @@ import type {
 } from "./types";
 import { buildInstruction } from "./instructions";
 import { ProviderRegistry } from "./providers";
+import { SpendGuard, type SpendBlockReason } from "./budget";
 
 export interface OrchestratorOptions {
   /** Сколько раз ретраить того же провайдера перед фоллбэком. По ТЗ = 1. */
   retriesSameProvider?: number;
+  /** Общий предохранитель может обслуживать много последовательных генераций bake-off. */
+  spendGuard?: SpendGuard;
 }
 
 export class GenerationOrchestrator {
@@ -55,9 +58,18 @@ export class GenerationOrchestrator {
     }
 
     let totalCost = 0;
+    let blockedReason: SpendBlockReason | undefined;
 
     for (const step of plan) {
       const provider = this.registry.get(step.providerName);
+      const permission = this.opts.spendGuard?.canStart(provider);
+      if (permission && !permission.allowed) {
+        blockedReason = permission.reason;
+        // Исчерпанный бюджет закрывает весь дальнейший план. Заблокированный
+        // paid-провайдер можно пропустить, чтобы разрешить безопасный mock fallback.
+        if (permission.reason === "budget_exhausted") break;
+        continue;
+      }
       const t0 = Date.now();
       const result = await provider.generateCarEdit(
         req.sourceImage,
@@ -67,6 +79,7 @@ export class GenerationOrchestrator {
       );
       const latencyMs = Date.now() - t0;
       totalCost += result.internalCostUsd;
+      this.opts.spendGuard?.record(result.internalCostUsd);
 
       attempts.push({
         provider: provider.name,
@@ -96,7 +109,7 @@ export class GenerationOrchestrator {
       attempts,
       totalInternalCostUsd: round4(totalCost),
       totalLatencyMs: Date.now() - startedAt,
-      failureReason: "all_providers_failed",
+      failureReason: blockedReason ?? "all_providers_failed",
     };
   }
 }

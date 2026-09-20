@@ -10,6 +10,10 @@ import type { OperationConfig, ProviderResult } from "../types";
 export interface AICarEditProvider {
   /** Уникальное имя провайдера для логов/роутинга, напр. "mock", "openai", "flux". */
   readonly name: string;
+  /** mock не ходит во внешнюю сеть; paid потенциально создаёт реальный расход. */
+  readonly billingMode: "mock" | "paid";
+  /** Консервативный предел одного вызова для проверки бюджета ДО запроса. */
+  readonly maxCostUsdPerCall: number;
 
   /**
    * Единый метод из ТЗ: generateCarEdit(image, operation/config, params, references).

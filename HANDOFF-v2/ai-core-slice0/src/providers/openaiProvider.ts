@@ -23,11 +23,14 @@ export interface OpenAIProviderOptions {
 
 export class OpenAICarEditProvider implements AICarEditProvider {
   readonly name = "openai";
+  readonly billingMode = "paid" as const;
+  readonly maxCostUsdPerCall: number;
   private opts: OpenAIProviderOptions;
 
   constructor(opts: OpenAIProviderOptions) {
     if (!opts.apiKey) throw new Error("OpenAICarEditProvider: apiKey is required (use env)");
     this.opts = opts;
+    this.maxCostUsdPerCall = opts.estimatedCostUsd ?? 0.05;
   }
 
   async generateCarEdit(

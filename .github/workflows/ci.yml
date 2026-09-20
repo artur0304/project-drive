@@ -29,6 +29,7 @@ jobs:
           cache-dependency-path: |
             HANDOFF-v2/backend/package-lock.json
             HANDOFF-v2/web/package-lock.json
+            HANDOFF-v2/ai-core-slice0/package-lock.json
 
       - name: Install backend dependencies
         run: npm ci --prefix HANDOFF-v2/backend
@@ -36,9 +37,11 @@ jobs:
       - name: Install web dependencies
         run: npm ci --prefix HANDOFF-v2/web
 
-      - name: Run backend and frontend tests
+      - name: Install AI core dependencies
+        run: npm ci --prefix HANDOFF-v2/ai-core-slice0
+
+      - name: Run backend, frontend and AI core tests
         run: npm test
 
       - name: Build Next.js application
         run: npm run build:web
-

@@ -18,6 +18,7 @@ import type { GenerationRequest, OperationConfig, OperationKind } from "../types
 import { GenerationOrchestrator } from "../orchestrator";
 import { ProviderRegistry } from "../providers";
 import { MockAIProvider } from "../providers/mockProvider";
+import { SpendGuard } from "../budget";
 import {
   RUBRIC_CRITERIA,
   RubricScore,
@@ -47,12 +48,24 @@ interface BakeoffRow {
   outputImage?: string;
 }
 
+export interface BakeoffSafetyOptions {
+  maxBudgetUsd: number;
+  allowPaidProviders?: boolean;
+}
+
 export async function runBakeoff(
   cases: BakeoffCase[],
   registry: ProviderRegistry,
-  outDir: string
+  outDir: string,
+  safety: BakeoffSafetyOptions
 ): Promise<BakeoffRow[]> {
-  const orchestrator = new GenerationOrchestrator(registry, { retriesSameProvider: 1 });
+  // Одного boolean недостаточно: для платного запуска оператор должен ещё
+  // выставить одноразовое подтверждение в окружении именно этой команды.
+  if (safety.allowPaidProviders && process.env.PROJECT_DRIVE_ALLOW_PAID_AI !== "YES_FOR_THIS_RUN") {
+    throw new Error("Paid AI is locked. Set PROJECT_DRIVE_ALLOW_PAID_AI=YES_FOR_THIS_RUN only after explicit approval.");
+  }
+  const spendGuard = new SpendGuard(safety);
+  const orchestrator = new GenerationOrchestrator(registry, { retriesSameProvider: 1, spendGuard });
   const rows: BakeoffRow[] = [];
 
   for (const c of cases) {
@@ -82,6 +95,12 @@ export async function runBakeoff(
   writeCsv(rows, path.join(outDir, "bakeoff_results.csv"));
   // 3) пустой scoring-шаблон для ручной оценки качества
   writeScoringTemplate(rows, path.join(outDir, "bakeoff_scoring_template.json"));
+  fs.writeFileSync(path.join(outDir, "bakeoff_run_manifest.json"), JSON.stringify({
+    mode: safety.allowPaidProviders ? "paid-enabled" : "mock-only",
+    ...spendGuard.snapshot(),
+    casesRequested: cases.length,
+    casesCompleted: rows.filter((row) => row.ok).length,
+  }, null, 2));
 
   printCostSummary(rows);
   return rows;
@@ -201,7 +220,10 @@ if (require.main === module) {
     },
   ];
 
-  runBakeoff(demoCases, registry, path.join(__dirname, "../../out")).then(() => {
+  runBakeoff(demoCases, registry, path.join(__dirname, "../../out"), {
+    maxBudgetUsd: 2,
+    allowPaidProviders: false,
+  }).then(() => {
     console.log("\nDemo bake-off done. Заполни out/bakeoff_scoring_template.json и вызови summarizeQuality().");
   });
 }

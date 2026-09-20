@@ -5,7 +5,8 @@
   "description": "Slice 0 AI core: provider layer + orchestrator + bake-off harness",
   "type": "commonjs",
   "scripts": {
-    "bakeoff:demo": "ts-node src/bakeoff/runBakeoff.ts"
+    "bakeoff:demo": "ts-node src/bakeoff/runBakeoff.ts",
+    "test": "tsc --noEmit && ts-node src/bakeoff/budgetGuard.test.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

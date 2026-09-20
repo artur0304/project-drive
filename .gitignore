@@ -3,6 +3,7 @@ node_modules/
 .next/
 dist/
 coverage/
+HANDOFF-v2/ai-core-slice0/out/
 
 # Секреты и локальные настройки
 .env

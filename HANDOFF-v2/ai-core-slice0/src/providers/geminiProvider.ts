@@ -48,6 +48,8 @@ export interface GeminiProviderOptions {
 
 export class GeminiCarEditProvider implements AICarEditProvider {
   readonly name = "gemini";
+  readonly billingMode = "paid" as const;
+  readonly maxCostUsdPerCall: number;
   private opts: Required<Omit<GeminiProviderOptions, "aspectRatio">> & {
     aspectRatio?: string;
   };
@@ -64,6 +66,7 @@ export class GeminiCarEditProvider implements AICarEditProvider {
       estimatedCostUsd: opts.estimatedCostUsd ?? 0.05, // placeholder, уточнить по billing
       aspectRatio: opts.aspectRatio,
     };
+    this.maxCostUsdPerCall = this.opts.estimatedCostUsd;
   }
 
   async generateCarEdit(
