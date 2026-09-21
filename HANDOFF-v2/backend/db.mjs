@@ -492,7 +492,24 @@ export function getProductAnalytics({ days = 30, recentLimit = 30 } = {}) {
     FROM product_events WHERE created_at >= ? GROUP BY event_name ORDER BY count DESC, event_name`).all(since);
   const recent = db.prepare(`SELECT event_name, project_id, version_id, details_json, created_at
     FROM product_events ORDER BY created_at DESC LIMIT ?`).all(safeLimit);
-  return { days: safeDays, totals, recent };
+  const projectCounts = Object.fromEntries(db.prepare(`SELECT event_name, COUNT(DISTINCT project_id) AS count
+    FROM product_events WHERE created_at >= ? AND project_id IS NOT NULL GROUP BY event_name`).all(since)
+    .map((row) => [row.event_name, row.count]));
+  const created = projectCounts.project_created || 0;
+  const uploaded = projectCounts.photo_uploaded || 0;
+  const generated = db.prepare(`SELECT COUNT(DISTINCT project_id) AS count FROM product_events
+    WHERE created_at >= ? AND event_name IN ('mock_generation_succeeded', 'mock_generation_failed')`).get(since).count;
+  const succeeded = projectCounts.mock_generation_succeeded || 0;
+  const reported = projectCounts.result_reported || 0;
+  const percent = (value, base) => base > 0 ? Math.round((value / base) * 100) : 0;
+  const funnel = {
+    created, uploaded, generated, succeeded, reported,
+    uploadRate: percent(uploaded, created),
+    generationRate: percent(generated, uploaded),
+    successRate: percent(succeeded, generated),
+    reportRate: percent(reported, succeeded),
+  };
+  return { days: safeDays, totals, recent, funnel };
 }
 
 // внутренний помощник — записать строку в историю кредитов

@@ -14,6 +14,7 @@
 .adminStats strong { font-size:28px; }.adminStats span { color:#9a9ea5; font-size:12px; }
 .adminGrid { max-width:1200px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:auto; }
 .adminCard { padding:20px; min-width:0; }.adminWide { grid-column:1/-1; }
+.funnelGrid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:16px; }.funnelGrid article{padding:14px;border:1px solid #2e353f;border-radius:10px;background:#11151b}.funnelGrid strong,.funnelGrid span{display:block}.funnelGrid strong{font-size:24px;color:#e5533b}.funnelGrid span{margin-top:5px;color:#9a9ea5;font-size:10px;line-height:1.4}
 .adminForm { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:16px; }
 .adminForm label { color:#9a9ea5; font-size:11px; font-weight:700; }
 .adminForm input,.adminForm select { width:100%; margin-top:5px; padding:10px; border:1px solid #2e353f; border-radius:8px; background:#0f1217; color:#f1eee8; }
@@ -23,4 +24,4 @@
 .adminLog,.auditRow { display:grid; grid-template-columns:160px 1fr 2fr; gap:12px; padding:10px 0; border-bottom:1px solid #242a33; font-size:12px; }.adminLog { grid-template-columns:1fr 2fr; }.adminLog span,.adminLog small,.auditRow time,.auditRow span { color:#9a9ea5; }
 .metricRow { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid #242a33; font-size:12px; text-transform:capitalize; }.metricRow span{color:#9a9ea5}.metricRow strong{color:#e5533b}
 .productEventRow { display:grid; grid-template-columns:180px 1fr 1fr; gap:14px; padding:10px 0; border-bottom:1px solid #242a33; font-size:12px; }.productEventRow time,.productEventRow span{color:#9a9ea5}.productEventRow strong{text-transform:capitalize}
-@media(max-width:720px){.adminPage{padding:20px 14px}.adminStats,.adminGrid{grid-template-columns:1fr}.adminWide{grid-column:auto}.adminForm{grid-template-columns:1fr}.adminPage>header{align-items:start}.auditRow,.productEventRow{grid-template-columns:1fr}.adminPage h1{font-size:28px}}
+@media(max-width:720px){.adminPage{padding:20px 14px}.adminStats,.adminGrid{grid-template-columns:1fr}.adminWide{grid-column:auto}.adminForm{grid-template-columns:1fr}.funnelGrid{grid-template-columns:1fr 1fr}.adminPage>header{align-items:start}.auditRow,.productEventRow{grid-template-columns:1fr}.adminPage h1{font-size:28px}}
