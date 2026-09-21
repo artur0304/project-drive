@@ -59,6 +59,20 @@ for (const name of readdirSync(join(__dir, 'migrations')).filter((file) => file.
 // Маленький помощник: текущая дата-время строкой (ISO), напр. "2026-01-15T12:00:00Z".
 const now = () => new Date().toISOString();
 
+export function getDatabaseReadiness() {
+  const quickCheck = db.prepare('PRAGMA quick_check').get();
+  const foreignKeys = db.prepare('PRAGMA foreign_keys').get();
+  const migrations = db.prepare('SELECT COUNT(*) AS count FROM schema_migrations').get();
+  const integrity = Object.values(quickCheck || {})[0] || 'unknown';
+  const foreignKeysEnabled = Number(Object.values(foreignKeys || {})[0]) === 1;
+  return {
+    ready: integrity === 'ok' && foreignKeysEnabled,
+    integrity,
+    foreignKeysEnabled,
+    migrationCount: Number(migrations?.count || 0),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // ПОЛЬЗОВАТЕЛИ
 // ---------------------------------------------------------------------------

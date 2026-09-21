@@ -24,6 +24,14 @@ try {
   assert.equal(health.headers.get('referrer-policy'), 'no-referrer');
   assert.match(health.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
 
+  const ready = await fetch(`${base}/api/ready`);
+  assert.equal(ready.status, 200);
+  const readiness = await ready.json();
+  assert.equal(readiness.ready, true);
+  assert.equal(readiness.integrity, 'ok');
+  assert.equal(readiness.foreignKeysEnabled, true);
+  assert.ok(readiness.migrationCount >= 5);
+
   const pricing = await fetch(`${base}/api/pricing`);
   assert.equal(pricing.status, 200);
 

@@ -211,6 +211,10 @@ export const server = createServer(async (req, res) => {
     if (method === 'GET' && path === '/api/health') {
       return send(res, 200, { ok: true, service: 'project-drive-backend' });
     }
+    if (method === 'GET' && path === '/api/ready') {
+      const readiness = db.getDatabaseReadiness();
+      return send(res, readiness.ready ? 200 : 503, { ...readiness, service: 'project-drive-backend' });
+    }
 
     // Единственный публичный источник цен операций. Клиент показывает эти
     // значения, но при генерации сервер всё равно пересчитывает сумму сам.
