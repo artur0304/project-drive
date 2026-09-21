@@ -8,6 +8,10 @@ import './admin.css';
 
 const EMPTY_WHEEL = { brand: '', model: '', sizeLabel: 'R19', diameter: 19, color: '', finish: '', rightsSource: '', rightsBasis: '', isOem: false };
 
+function eventLabel(name) {
+  return String(name || '').replaceAll('_', ' ');
+}
+
 export default function AdminPage() {
   const [data, setData] = useState(null);
   const [wheel, setWheel] = useState(EMPTY_WHEEL);
@@ -71,7 +75,7 @@ export default function AdminPage() {
     <header><div><p>Project Drive</p><h1>Catalog admin</h1></div><a href="/configurator">Back to configurator</a></header>
     {message && <p className="adminMessage">{message}</p>}
     {!data ? <section className="adminGate"><h2>Admin access required</h2><p>Sign in with an email listed in PROJECT_DRIVE_ADMIN_EMAILS.</p></section> : <>
-      <section className="adminStats"><article><strong>{data.wheels.length}</strong><span>Wheel variants</span></article><article><strong>{data.aiJobs.length}</strong><span>AI jobs</span></article><article><strong>{data.audit.length}</strong><span>Audit events</span></article></section>
+      <section className="adminStats"><article><strong>{data.wheels.length}</strong><span>Wheel variants</span></article><article><strong>{data.aiJobs.length}</strong><span>AI jobs</span></article><article><strong>{data.audit.length}</strong><span>Audit events</span></article><article><strong>{data.productAnalytics.totals.reduce((sum, item) => sum + item.count, 0)}</strong><span>Product events · {data.productAnalytics.days}d</span></article></section>
       <div className="adminGrid">
         <section className="adminCard"><h2>Add wheel</h2><p>New variants stay hidden until a valid reference is uploaded.</p><form onSubmit={createWheel} className="adminForm">
           {['brand', 'model', 'sizeLabel', 'diameter', 'color', 'finish', 'rightsSource', 'rightsBasis'].map((name) => <label key={name}>{name}<input required value={wheel[name]} type={name === 'diameter' ? 'number' : 'text'} onChange={(event) => setWheel((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
@@ -89,6 +93,7 @@ export default function AdminPage() {
 
         <section className="adminCard"><h2>Credit adjustment</h2><p>Every manual change requires a reason and is written to the audit log.</p><form onSubmit={adjustCredits} className="adminForm"><label>User<select required value={credit.userId} onChange={(event) => setCredit((current) => ({ ...current, userId: event.target.value }))}><option value="">Choose</option>{data.users.map((user) => <option key={user.id} value={user.id}>{user.email}</option>)}</select></label><label>Delta<input required type="number" value={credit.delta} onChange={(event) => setCredit((current) => ({ ...current, delta: event.target.value }))} /></label><label>Reason<input required value={credit.reason} onChange={(event) => setCredit((current) => ({ ...current, reason: event.target.value }))} /></label><button type="submit">Apply adjustment</button></form></section>
         <section className="adminCard"><h2>AI jobs</h2>{data.aiJobs.length ? data.aiJobs.map((job) => <div className="adminLog" key={job.id}><strong>{job.provider}</strong><span>{job.latency_ms ?? '—'} ms · ${job.cost_usd ?? 0} · {job.attempts} attempts</span>{job.error && <small>{job.error}</small>}</div>) : <p>No jobs yet. Real AI remains disabled.</p>}</section>
+        <section className="adminCard"><h2>Product activity</h2><p>Local aggregate for the last {data.productAnalytics.days} days. No external tracker is used.</p>{data.productAnalytics.totals.length ? data.productAnalytics.totals.map((item) => <div className="metricRow" key={item.event_name}><span>{eventLabel(item.event_name)}</span><strong>{item.count}</strong></div>) : <p>No events yet.</p>}</section>
         <section className="adminCard adminWide"><h2>Audit log</h2>{data.audit.slice(0, 20).map((item) => <div className="auditRow" key={item.id}><time>{new Date(item.created_at).toLocaleString()}</time><strong>{item.action}</strong><span>{item.entity_type} {item.entity_id || ''}</span></div>)}</section>
       </div>
     </>}

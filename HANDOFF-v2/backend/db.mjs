@@ -475,6 +475,26 @@ export function listAuditLog(limit = 50) {
   return db.prepare('SELECT * FROM admin_audit_log ORDER BY created_at DESC LIMIT ?').all(Math.min(100, Math.max(1, Number(limit) || 50)));
 }
 
+export function recordProductEvent({ userId, eventName, projectId = null, versionId = null, details = null }) {
+  const id = randomUUID();
+  db.prepare(`INSERT INTO product_events
+    (id, user_id, project_id, version_id, event_name, details_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, userId, projectId, versionId, eventName, details ? JSON.stringify(details) : null, now());
+  return id;
+}
+
+export function getProductAnalytics({ days = 30, recentLimit = 30 } = {}) {
+  const safeDays = Math.min(365, Math.max(1, Number(days) || 30));
+  const safeLimit = Math.min(100, Math.max(1, Number(recentLimit) || 30));
+  const since = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+  const totals = db.prepare(`SELECT event_name, COUNT(*) AS count, MAX(created_at) AS last_at
+    FROM product_events WHERE created_at >= ? GROUP BY event_name ORDER BY count DESC, event_name`).all(since);
+  const recent = db.prepare(`SELECT event_name, project_id, version_id, details_json, created_at
+    FROM product_events ORDER BY created_at DESC LIMIT ?`).all(safeLimit);
+  return { days: safeDays, totals, recent };
+}
+
 // внутренний помощник — записать строку в историю кредитов
 function logTx(userId, delta, reason) {
   db.prepare('INSERT INTO credit_transactions (id, user_id, delta, reason, created_at) VALUES (?, ?, ?, ?, ?)')

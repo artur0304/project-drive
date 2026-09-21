@@ -7,7 +7,7 @@
 .adminPage p { color:#9a9ea5; line-height:1.55; }
 .adminPage a { color:#f1eee8; }
 .adminMessage,.adminGate { max-width:1200px; margin:0 auto 18px; padding:14px 16px; border:1px solid #49312e; border-radius:10px; background:rgba(229,83,59,.08); }
-.adminStats { max-width:1200px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:0 auto 14px; }
+.adminStats { max-width:1200px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 auto 14px; }
 .adminStats article,.adminCard { border:1px solid #242a33; border-radius:14px; background:#171b22; }
 .adminStats article { padding:18px; }
 .adminStats strong,.adminStats span { display:block; }
@@ -21,4 +21,5 @@
 .adminCheck { display:flex; align-items:center; gap:8px; }.adminCheck input { width:auto; margin:0; }.csvUpload { display:block; margin-top:18px; color:#9a9ea5; font-size:12px; }.csvUpload input { display:block; margin-top:8px; }
 .adminTable { overflow-x:auto; }table { width:100%; border-collapse:collapse; }th,td { padding:12px 10px; border-bottom:1px solid #242a33; text-align:left; font-size:12px; }th { color:#5e636a; }td small { display:block; margin-top:3px; color:#5e636a; }
 .adminLog,.auditRow { display:grid; grid-template-columns:160px 1fr 2fr; gap:12px; padding:10px 0; border-bottom:1px solid #242a33; font-size:12px; }.adminLog { grid-template-columns:1fr 2fr; }.adminLog span,.adminLog small,.auditRow time,.auditRow span { color:#9a9ea5; }
+.metricRow { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid #242a33; font-size:12px; text-transform:capitalize; }.metricRow span{color:#9a9ea5}.metricRow strong{color:#e5533b}
 @media(max-width:720px){.adminPage{padding:20px 14px}.adminStats,.adminGrid{grid-template-columns:1fr}.adminWide{grid-column:auto}.adminForm{grid-template-columns:1fr}.adminPage>header{align-items:start}.auditRow{grid-template-columns:1fr}.adminPage h1{font-size:28px}}

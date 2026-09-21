@@ -263,6 +263,7 @@ export const server = createServer(async (req, res) => {
       if (method === 'GET' && path === '/api/admin/overview') {
         return send(res, 200, {
           wheels: db.listAdminWheels(), aiJobs: db.listAiJobs(), audit: db.listAuditLog(), users: db.listUsers(),
+          productAnalytics: db.getProductAnalytics(),
         });
       }
       if (method === 'POST' && path === '/api/admin/wheels') {
@@ -321,10 +322,12 @@ export const server = createServer(async (req, res) => {
       if (!cleanName || cleanName.length > 80) return send(res, 400, { error: 'название должно содержать от 1 до 80 символов' });
       if (cleanMake.length > 60 || cleanModel.length > 80) return send(res, 400, { error: 'марка или модель слишком длинная' });
       // userId берём из пропуска, а НЕ из тела запроса — так нельзя создать проект "за другого"
-      return send(res, 201, db.createProject({
+      const project = db.createProject({
         userId: user.id, name: cleanName,
         vehicleMake: cleanMake || null, vehicleModel: cleanModel || null,
-      }));
+      });
+      db.recordProductEvent({ userId: user.id, projectId: project.id, eventName: 'project_created', details: { vehicleLabeled: Boolean(cleanMake || cleanModel) } });
+      return send(res, 201, project);
     }
     if (method === 'GET' && path === '/api/projects') {
       const user = auth.checkSession(tokenFrom(req));
@@ -397,7 +400,9 @@ export const server = createServer(async (req, res) => {
       const cleanNote = typeof note === 'string' ? note.trim().slice(0, 500) : null;
       // Жалоба лишь ставит версию в очередь на ручную проверку. Баланс здесь
       // не меняем: решение о возврате будет отдельным действием администратора.
-      return send(res, 201, db.createResultReport({ versionId, userId: user.id, reason, note: cleanNote || null }));
+      const report = db.createResultReport({ versionId, userId: user.id, reason, note: cleanNote || null });
+      if (!report.already) db.recordProductEvent({ userId: user.id, projectId: project.id, versionId, eventName: 'result_reported', details: { reason } });
+      return send(res, 201, report);
     }
 
     const shareMatch = path.match(/^\/api\/versions\/([^/]+)\/share$/);
@@ -411,9 +416,12 @@ export const server = createServer(async (req, res) => {
       const { enabled } = await readBody(req);
       if (enabled === true) {
         const share = db.enablePublicShare(versionId);
+        db.recordProductEvent({ userId: user.id, projectId: project.id, versionId, eventName: 'public_share_enabled' });
         return send(res, 200, { ...share, path: `/share/${share.token}` });
       }
-      return send(res, 200, db.disablePublicShare(versionId));
+      const disabled = db.disablePublicShare(versionId);
+      if (disabled.changed) db.recordProductEvent({ userId: user.id, projectId: project.id, versionId, eventName: 'public_share_disabled' });
+      return send(res, 200, disabled);
     }
 
     // --- кошелёк — только свой, пользователь из пропуска ---
@@ -497,6 +505,7 @@ export const server = createServer(async (req, res) => {
       const fname = randomUUID() + '.jpg';
       writeFileSync(join(UP, fname), buf);
       const assetId = db.addSourceAsset({ projectId: project.id, url: '/uploads/' + fname });
+      db.recordProductEvent({ userId: user.id, projectId: project.id, eventName: 'photo_uploaded', details: { width: preflight.width, height: preflight.height, originalBytes } });
       return send(res, 201, { id: assetId, url: '/uploads/' + fname, bytes: buf.length, originalBytes, normalized: true, preflight });
     }
 
@@ -581,6 +590,17 @@ export const server = createServer(async (req, res) => {
       if (!user) return send(res, 401, { error: 'нужен вход' });
       const { projectId, operations } = await readBody(req);
       const r = await generateForProject({ db, userId: user.id, projectId, operations });
+      const ownedProject = db.getProject(projectId);
+      // Не создаём событие для случайного/чужого projectId: иначе внешний ключ
+      // превратил бы корректный 404 в серверную ошибку и засорил аналитику.
+      if (ownedProject?.user_id === user.id) {
+        db.recordProductEvent({
+          userId: user.id, projectId,
+          versionId: r.versionId || null,
+          eventName: r.ok ? 'mock_generation_succeeded' : 'mock_generation_failed',
+          details: { statusCode: r.code, creditsCharged: r.creditsCharged || 0, operationCount: Array.isArray(operations) ? operations.length : 0 },
+        });
+      }
       return send(res, r.ok ? 201 : r.code, r);
     }
 

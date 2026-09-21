@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-sqlite test.mjs && node --experimental-sqlite test-auth.mjs && node --experimental-sqlite test-generation.mjs && node --experimental-sqlite test-generation-planner.mjs && node test-image-normalization.mjs && node --experimental-sqlite test-wheel-catalog.mjs && node --experimental-sqlite test-wheel-admin.mjs && node --experimental-sqlite test-sharing.mjs && node --experimental-sqlite test-vehicle-metadata.mjs && node --experimental-sqlite test-server-security.mjs && node --experimental-sqlite test-ownership.mjs"
+    "test": "node --experimental-sqlite test.mjs && node --experimental-sqlite test-auth.mjs && node --experimental-sqlite test-generation.mjs && node --experimental-sqlite test-generation-planner.mjs && node test-image-normalization.mjs && node --experimental-sqlite test-wheel-catalog.mjs && node --experimental-sqlite test-wheel-admin.mjs && node --experimental-sqlite test-sharing.mjs && node --experimental-sqlite test-vehicle-metadata.mjs && node --experimental-sqlite test-product-events.mjs && node --experimental-sqlite test-server-security.mjs && node --experimental-sqlite test-ownership.mjs"
   },
   "dependencies": {
     "sharp": "0.35.4"
