@@ -1,5 +1,5 @@
 :root{--landing-bg:#0c0e13;--landing-line:#242a33;--landing-ink:#f1eee8;--landing-muted:#8b93a0;--landing-accent:#e5533b}
-.landingPage{min-height:100vh;overflow:hidden;background:var(--landing-bg);color:var(--landing-ink);font-family:Manrope,system-ui,sans-serif}
+.landingPage{min-height:100vh;overflow-x:clip;background:var(--landing-bg);color:var(--landing-ink);font-family:Manrope,system-ui,sans-serif}
 .landingPage *{box-sizing:border-box}.landingPage:after{position:fixed;inset:0;z-index:60;content:"";pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .landingNav{position:fixed;z-index:50;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:19px 30px;background:linear-gradient(180deg,rgba(12,14,19,.92),transparent)}
 .landingLogo{display:flex;align-items:center;gap:10px;color:var(--landing-ink);font-weight:800;text-decoration:none}.landingLogo span{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--landing-accent);border-radius:8px;color:var(--landing-accent);font-size:10px}
