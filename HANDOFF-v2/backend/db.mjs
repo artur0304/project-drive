@@ -512,6 +512,44 @@ export function getProductAnalytics({ days = 30, recentLimit = 30 } = {}) {
   return { days: safeDays, totals, recent, funnel };
 }
 
+export function exportUserData(userId) {
+  const user = getUser(userId);
+  if (!user) return null;
+  const projects = listProjectsWithSummary(userId).map((project) => ({
+    id: project.id,
+    name: project.name,
+    vehicleMake: project.vehicle_make,
+    vehicleModel: project.vehicle_model,
+    createdAt: project.created_at,
+    sourceUrl: project.source_url,
+    versions: listVersions(project.id).map((version) => {
+      let operations = [];
+      try { operations = JSON.parse(version.config_json || '[]'); } catch { /* Повреждённую конфигурацию не экспортируем. */ }
+      return {
+        id: version.id, operations, outputUrl: version.output_url,
+        creditsCharged: version.credits_charged, plannedCredits: version.planned_credits,
+        status: version.status, warning: version.warning, createdAt: version.created_at,
+      };
+    }),
+  }));
+  return {
+    schemaVersion: 1,
+    exportedAt: now(),
+    account: { email: user.email, name: user.name, createdAt: user.created_at },
+    wallet: getWallet(userId),
+    creditTransactions: listTransactions(userId),
+    projects,
+    favoriteWheelIds: db.prepare('SELECT variant_id FROM favorite_wheels WHERE user_id = ? ORDER BY created_at DESC').all(userId).map((row) => row.variant_id),
+    recentWheelIds: db.prepare('SELECT variant_id FROM recently_viewed_wheels WHERE user_id = ? ORDER BY viewed_at DESC').all(userId).map((row) => row.variant_id),
+    reports: db.prepare('SELECT version_id, reason, note, status, created_at FROM result_reports WHERE user_id = ? ORDER BY created_at DESC').all(userId),
+    publicShares: db.prepare(`SELECT s.version_id, s.enabled, s.created_at, s.disabled_at
+      FROM public_result_shares s JOIN project_versions v ON v.id = s.version_id
+      JOIN car_projects p ON p.id = v.project_id WHERE p.user_id = ? ORDER BY s.created_at DESC`).all(userId),
+    orders: db.prepare('SELECT id, pack_id, credits, amount_cents, status, created_at, paid_at FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(userId),
+    productEvents: db.prepare('SELECT event_name, project_id, version_id, details_json, created_at FROM product_events WHERE user_id = ? ORDER BY created_at DESC').all(userId),
+  };
+}
+
 // внутренний помощник — записать строку в историю кредитов
 function logTx(userId, delta, reason) {
   db.prepare('INSERT INTO credit_transactions (id, user_id, delta, reason, created_at) VALUES (?, ?, ?, ?, ?)')

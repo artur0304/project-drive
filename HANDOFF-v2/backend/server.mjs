@@ -436,6 +436,12 @@ export const server = createServer(async (req, res) => {
       // История, как и баланс, берётся только для владельца текущей сессии.
       return send(res, 200, db.listTransactions(user.id));
     }
+    if (method === 'GET' && path === '/api/account/export') {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const exported = db.exportUserData(user.id);
+      return send(res, 200, exported);
+    }
     // --- вход / регистрация ---
     if (method === 'POST' && path === '/api/auth/register') {
       const { email, password, name } = await readBody(req);
