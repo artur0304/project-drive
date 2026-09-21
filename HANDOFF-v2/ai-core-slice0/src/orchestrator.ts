@@ -62,7 +62,9 @@ export class GenerationOrchestrator {
 
     for (const step of plan) {
       const provider = this.registry.get(step.providerName);
-      const permission = this.opts.spendGuard?.canStart(provider);
+      // Для paid-провайдера start() сначала резервирует максимальную цену
+      // в долговечном ledger и только потом разрешает сетевой вызов.
+      const permission = this.opts.spendGuard?.start(provider);
       if (permission && !permission.allowed) {
         blockedReason = permission.reason;
         // Исчерпанный бюджет закрывает весь дальнейший план. Заблокированный
@@ -79,7 +81,7 @@ export class GenerationOrchestrator {
       );
       const latencyMs = Date.now() - t0;
       totalCost += result.internalCostUsd;
-      this.opts.spendGuard?.record(result.internalCostUsd);
+      this.opts.spendGuard?.record(result.internalCostUsd, permission?.allowed ? permission : undefined);
 
       attempts.push({
         provider: provider.name,

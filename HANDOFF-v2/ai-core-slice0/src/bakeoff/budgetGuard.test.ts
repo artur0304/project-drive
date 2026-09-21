@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { SpendGuard } from "../budget";
 import { GenerationOrchestrator } from "../orchestrator";
 import { ProviderRegistry } from "../providers";
@@ -63,11 +66,50 @@ async function testPaidRunNeedsOneTimeEnvironmentConfirmation() {
   }
 }
 
+async function testLifetimeLedgerSurvivesRestart() {
+  const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "project-drive-ledger-"));
+  const ledgerPath = path.join(testDir, "spend-ledger.json");
+  let calls = 0;
+  const paid: AICarEditProvider = {
+    name: "paid-ledger-test",
+    billingMode: "paid",
+    maxCostUsdPerCall: 1.6,
+    async generateCarEdit() {
+      calls += 1;
+      return { ok: true, outputImage: "demo://result.jpg", internalCostUsd: 1.5 };
+    },
+  };
+  const registry = new ProviderRegistry({ primary: paid.name }).register(paid);
+
+  const firstProcess = new SpendGuard({
+    maxBudgetUsd: 3,
+    lifetimeBudgetUsd: 3,
+    ledgerPath,
+    allowPaidProviders: true,
+  });
+  assert.equal((await new GenerationOrchestrator(registry, { retriesSameProvider: 0, spendGuard: firstProcess }).run(request)).ok, true);
+  assert.equal(firstProcess.snapshot().lifetimeSpentUsd, 1.5);
+
+  // Новый объект имитирует полный перезапуск. Он обязан прочитать предыдущие
+  // $1.50 и заблокировать резерв $1.60 до сетевого вызова.
+  const restartedProcess = new SpendGuard({
+    maxBudgetUsd: 3,
+    lifetimeBudgetUsd: 3,
+    ledgerPath,
+    allowPaidProviders: true,
+  });
+  const blocked = await new GenerationOrchestrator(registry, { retriesSameProvider: 0, spendGuard: restartedProcess }).run(request);
+  assert.equal(blocked.failureReason, "budget_exhausted");
+  assert.equal(calls, 1);
+  assert.equal(restartedProcess.snapshot().lifetimeRemainingUsd, 1.5);
+}
+
 async function main() {
   await testBudgetStopsBeforeNextCall();
   await testPaidProviderIsNeverCalledWithoutApproval();
   await testPaidRunNeedsOneTimeEnvironmentConfirmation();
-  console.log("✅ Paid providers stay locked and the bake-off budget stops new calls before overspend.");
+  await testLifetimeLedgerSurvivesRestart();
+  console.log("✅ Paid providers stay locked; run and lifetime budgets stop calls before overspend.");
 }
 
 main();

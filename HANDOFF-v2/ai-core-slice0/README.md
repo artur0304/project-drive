@@ -13,7 +13,7 @@
 - `src/providers/index.ts` — реестр + роутинг провайдера по операции + fallback.
 - `src/orchestrator.ts` — primary → retry(1) → fallback(1), логи, cost/latency.
 - `src/budget.ts` — блокировка paid-провайдеров по умолчанию и общий USD-лимит
-  до начала каждой новой попытки.
+  до начала каждой новой попытки, плюс атомарный пожизненный ledger между запусками.
 - `src/bakeoff/rubric.ts` — 8 критериев качества + пороги (accept ≥4/5, go/no-go ≥70%).
 - `src/bakeoff/runBakeoff.ts` — честная матрица: каждый кейс независимо проходит
   через каждого кандидата → JSON/CSV + scoring-шаблон. Fallback одного кандидата
@@ -28,6 +28,7 @@ npm run bakeoff:demo
 ручной оценки `bakeoff_scoring_template.json` скрывает кандидата и провайдера;
 соответствие раскрывается после оценки через отдельный `bakeoff_blind_key.json`.
 `bakeoff_run_manifest.json` фиксирует режим запуска, лимит и фактический расход.
+`bakeoff_report.html` показывает исходник и результат рядом без внешних зависимостей.
 После заполнения всех показанных оценок числами `1..5` команда
 `npm run bakeoff:score` проверяет полноту, раскрывает отдельный blind key и создаёт
 `bakeoff_quality_summary.json` с PASS/NO-GO по операциям, кандидатам и каждой паре

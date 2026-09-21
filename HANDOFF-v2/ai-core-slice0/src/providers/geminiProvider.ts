@@ -8,16 +8,14 @@
 // Что он делает: берёт фото машины + текст-инструкцию (+ reference-картинки диска),
 // шлёт их в Gemini и возвращает отредактированное фото.
 //
-// Проверено по актуальной доке (сентябрь 2026):
-//  - Endpoint:  POST https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent
+// Проверено по актуальной доке 21.09.2026:
+//  - Endpoint:  POST https://generativelanguage.googleapis.com/v1beta/interactions
 //  - Авторизация: заголовок  x-goog-api-key: <твой ключ>   (НЕ Bearer для этого endpoint)
-//  - Картинка на вход кладётся как inlineData { mimeType, data(base64) }
-//  - Несколько картинок = несколько inlineData-частей (так передаём и фото, и диск)
-//  - Ответ: candidates[0].content.parts[] — ищем часть с inlineData, это результат (base64)
+//  - Картинка на вход: { type:"image", mime_type, data(base64) }
+//  - Ответ: steps[].content[] — ищем type:"image" с data(base64)
 //
-// Модели "Nano Banana" на сейчас (имя ПОДТВЕРДИ в AI Studio → список моделей,
-// названия иногда меняются):
-//   gemini-3-pro-image-preview     — студийное качество (лучшее сохранение) ← дефолт
+// Стабильные модели "Nano Banana" на дату проверки:
+//   gemini-3-pro-image             — студийное качество (лучшее сохранение) ← дефолт
 //   gemini-3.1-flash-image         — баланс цена/качество
 //   gemini-3.1-flash-lite-image    — самый дешёвый/быстрый
 //   gemini-2.5-flash-image         — прошлое поколение (ещё работает)
@@ -61,7 +59,7 @@ export class GeminiCarEditProvider implements AICarEditProvider {
       throw new Error("GeminiCarEditProvider: apiKey required (use process.env.GEMINI_API_KEY)");
     }
     // Заполняем значения по умолчанию.
-    const model = opts.model ?? "gemini-3-pro-image-preview";
+    const model = opts.model ?? "gemini-3-pro-image";
     this.name = opts.name ?? `gemini:${model}`;
     this.opts = {
       apiKey: opts.apiKey,
@@ -82,29 +80,38 @@ export class GeminiCarEditProvider implements AICarEditProvider {
     const cost = this.opts.estimatedCostUsd;
 
     try {
-      // 1) Превращаем исходное фото и reference-картинки в inlineData (base64 + mime).
+      // 1) Превращаем исходное фото и reference-картинки в base64 + MIME.
       //    toInlineData умеет читать: data-URL, http(s)-ссылку и локальный файл.
       const sourcePart = await toInlineData(sourceImage);
       const refParts = await Promise.all(referenceImages.map((r) => toInlineData(r)));
 
-      // 2) Собираем "parts": сначала текст-инструкция, затем фото машины, затем диски.
+      // 2) Собираем input: сначала текст-инструкция, затем фото машины, затем диски.
       //    Порядок важен для читаемости, модель видит все картинки как контекст.
-      const parts: any[] = [{ text: instruction }, { inlineData: sourcePart }];
-      for (const ref of refParts) parts.push({ inlineData: ref });
+      const input: any[] = [
+        { type: "text", text: instruction },
+        { type: "image", mime_type: sourcePart.mimeType, data: sourcePart.data },
+      ];
+      for (const ref of refParts) input.push({ type: "image", mime_type: ref.mimeType, data: ref.data });
 
-      // 3) Тело запроса. responseModalities:["IMAGE"] говорит "хочу картинку на выходе".
+      // Inline-запрос должен оставаться меньше 20 MB; большие файлы требуют Files API.
+      const rawImageBytes = [sourcePart, ...refParts]
+        .reduce((sum, image) => sum + Buffer.byteLength(image.data, "base64"), 0);
+      if (rawImageBytes + Buffer.byteLength(instruction, "utf8") >= 20 * 1024 * 1024) {
+        return { ok: false, internalCostUsd: 0, error: "inline_request_too_large_use_files_api" };
+      }
+
+      // 3) Современный Interactions API задаёт формат картинки через response_format.
       const body: any = {
-        contents: [{ parts }],
-        generationConfig: {
-          responseModalities: ["IMAGE"],
-        },
+        model: this.opts.model,
+        input,
+        response_format: { type: "image" },
       };
       if (this.opts.aspectRatio) {
-        body.generationConfig.imageConfig = { aspectRatio: this.opts.aspectRatio };
+        body.response_format.aspect_ratio = this.opts.aspectRatio;
       }
 
       // 4) Отправляем запрос.
-      const url = `${this.opts.baseUrl}/models/${this.opts.model}:generateContent`;
+      const url = `${this.opts.baseUrl}/interactions`;
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -122,13 +129,17 @@ export class GeminiCarEditProvider implements AICarEditProvider {
 
       const data: any = await res.json();
 
-      // 5) Ищем в ответе часть с картинкой (inlineData). Там же бывает текст — его пропускаем.
-      const outParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-      const imgPart = outParts.find((p) => p?.inlineData?.data);
+      // 5) Ищем финальный image-блок. Поддерживаем snake_case REST и camelCase SDK.
+      const blocks: any[] = (data?.steps ?? [])
+        .filter((step: any) => step?.type === "model_output")
+        .flatMap((step: any) => Array.isArray(step?.content) ? step.content : []);
+      const imgPart = blocks.find((part) => part?.type === "image" && part?.data)
+        ?? data?.output_image
+        ?? data?.outputImage;
 
       if (!imgPart) {
         // Иногда модель отказывается (safety) и присылает только текст — покажем его в error.
-        const textPart = outParts.find((p) => p?.text)?.text;
+        const textPart = blocks.find((part) => part?.type === "text")?.text;
         return {
           ok: false,
           internalCostUsd: cost,
@@ -137,8 +148,8 @@ export class GeminiCarEditProvider implements AICarEditProvider {
       }
 
       // 6) Возвращаем результат как data-URL, чтобы его удобно было и показать, и сохранить.
-      const mime = imgPart.inlineData.mimeType ?? "image/png";
-      const outputImage = `data:${mime};base64,${imgPart.inlineData.data}`;
+      const mime = imgPart.mime_type ?? imgPart.mimeType ?? "image/png";
+      const outputImage = `data:${mime};base64,${imgPart.data}`;
 
       return { ok: true, outputImage, internalCostUsd: cost };
     } catch (e: any) {

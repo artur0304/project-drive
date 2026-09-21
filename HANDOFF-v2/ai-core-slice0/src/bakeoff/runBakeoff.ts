@@ -20,6 +20,7 @@ import { ProviderRegistry } from "../providers";
 import { MockAIProvider } from "../providers/mockProvider";
 import { SpendGuard } from "../budget";
 import { persistOutputArtifact } from "./artifacts";
+import { writeHtmlReport } from "./htmlReport";
 import {
   criteriaForOperations,
   RubricScore,
@@ -132,6 +133,8 @@ export async function runBakeoff(
   writeScoringTemplate(rows, path.join(outDir, "bakeoff_scoring_template.json"));
   // 4) имя кандидата скрыто от оценщика и раскрывается отдельным ключом.
   writeBlindKey(rows, path.join(outDir, "bakeoff_blind_key.json"));
+  // 5) автономная визуальная страница: исходник и результат рядом.
+  writeHtmlReport(rows, outDir);
   fs.writeFileSync(path.join(outDir, "bakeoff_run_manifest.json"), JSON.stringify({
     mode: safety.allowPaidProviders ? "paid-enabled" : "mock-only",
     ...spendGuard.snapshot(),

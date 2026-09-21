@@ -7,9 +7,16 @@
   "scripts": {
     "bakeoff:demo": "ts-node src/bakeoff/runBakeoff.ts",
     "bakeoff:mock-manifest": "ts-node src/bakeoff/runManifestMock.ts",
+    "bakeoff:stage1:mock": "ts-node src/bakeoff/runStagedMock.ts stage1",
+    "bakeoff:stage2:mock": "ts-node src/bakeoff/runStagedMock.ts stage2",
+    "bakeoff:stage3:mock": "ts-node src/bakeoff/runStagedMock.ts stage3",
+    "bakeoff:stage1": "ts-node src/bakeoff/runStagedGemini.ts stage1",
+    "bakeoff:stage2": "ts-node src/bakeoff/runStagedGemini.ts stage2",
+    "bakeoff:stage3": "ts-node src/bakeoff/runStagedGemini.ts stage3",
     "bakeoff:validate": "ts-node src/bakeoff/validateManifest.ts",
     "bakeoff:score": "ts-node src/bakeoff/scoreBakeoff.ts",
-    "test": "tsc --noEmit && ts-node src/bakeoff/budgetGuard.test.ts && ts-node src/bakeoff/manifest.test.ts && ts-node src/bakeoff/matrix.test.ts && ts-node src/bakeoff/scoring.test.ts"
+    "photos:check": "ts-node src/bakeoff/photoReadiness.ts",
+    "test": "tsc --noEmit && ts-node src/providers/geminiProvider.test.ts && ts-node src/bakeoff/budgetGuard.test.ts && ts-node src/bakeoff/manifest.test.ts && ts-node src/bakeoff/matrix.test.ts && ts-node src/bakeoff/scoring.test.ts && ts-node src/bakeoff/stagePlan.test.ts && ts-node src/bakeoff/photoReadiness.test.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

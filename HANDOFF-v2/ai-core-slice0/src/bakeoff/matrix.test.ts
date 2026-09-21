@@ -51,6 +51,11 @@ async function main() {
       !Object.prototype.hasOwnProperty.call(row, "provider")));
     const blindKey = JSON.parse(fs.readFileSync(path.join(outDir, "bakeoff_blind_key.json"), "utf8"));
     assert.deepEqual(blindKey.map((row: { candidate: string }) => row.candidate), ["candidate-a", "candidate-b"]);
+    const report = fs.readFileSync(path.join(outDir, "bakeoff_report.html"), "utf8");
+    assert.match(report, /same car for every candidate/);
+    assert.match(report, /candidate-a/);
+    assert.match(report, /Исходное фото/);
+    assert.match(report, /Результат/);
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true });
   }
