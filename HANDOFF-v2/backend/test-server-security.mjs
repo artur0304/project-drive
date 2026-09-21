@@ -22,6 +22,7 @@ try {
   assert.equal(health.headers.get('cache-control'), 'no-store');
   assert.equal(health.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(health.headers.get('referrer-policy'), 'no-referrer');
+  assert.match(health.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
 
   const pricing = await fetch(`${base}/api/pricing`);
   assert.equal(pricing.status, 200);

@@ -30,6 +30,7 @@ import * as auth from './auth.mjs';   // вход/регистрация
 import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
 import { normalizeUploadedImage, validateVehiclePhoto, VehiclePhotoValidationError } from './image-normalizer.mjs';
 import { validateWheelReference } from './wheel-reference.mjs';
+import { createRequestContext, writeErrorLog } from './observability.mjs';
 
 // папка, куда складываем загруженные фото (создаётся сама)
 const UP = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
@@ -196,6 +197,10 @@ export const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
   const method = req.method;
+  const requestContext = createRequestContext({ method, path });
+  // Идентификатор виден клиенту и в локальном error-log. Заголовки запроса,
+  // тело, токен и query string в контекст намеренно не копируются.
+  res.setHeader('X-Request-ID', requestContext.requestId);
 
   try {
     if (method === 'GET' && path === '/') {
@@ -613,7 +618,9 @@ export const server = createServer(async (req, res) => {
     // если маршрут не найден
     return send(res, 404, { error: 'маршрут не найден: ' + method + ' ' + path });
   } catch (e) {
-    return send(res, e.statusCode || 500, { error: String(e.message || e) });
+    const status = e.statusCode || 500;
+    if (status >= 500) writeErrorLog(requestContext, e, status);
+    return send(res, status, { error: String(e.message || e), requestId: requestContext.requestId });
   }
 });
 
