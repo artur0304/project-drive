@@ -4,6 +4,7 @@ node_modules/
 dist/
 coverage/
 HANDOFF-v2/ai-core-slice0/out/
+HANDOFF-v2/backend/out/
 
 # Секреты и локальные настройки
 .env

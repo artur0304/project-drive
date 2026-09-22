@@ -159,21 +159,29 @@ export function listProjectsWithSummary(userId) {
 }
 
 // Записать загруженное фото машины к проекту.
-export function addSourceAsset({ projectId, url, type = 'photo' }) {
+export function addSourceAsset({ projectId, url, type = 'photo', contentSha256 = null }) {
   const id = randomUUID();
-  db.prepare('INSERT INTO source_assets (id, project_id, type, url, created_at) VALUES (?, ?, ?, ?, ?)')
-    .run(id, projectId, type, url, now());
+  db.prepare('INSERT INTO source_assets (id, project_id, type, url, created_at, content_sha256) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, projectId, type, url, now(), contentSha256);
   return id;
 }
 
 // Сохранить версию (вариант). config — объект с выбором (плёнка/тонировка/диски).
-export function createVersion({ projectId, config, outputUrl = null, creditsCharged = 0, status = 'complete', warning = null, plannedCredits = creditsCharged }) {
+export function createVersion({ projectId, config, outputUrl = null, creditsCharged = 0, status = 'complete', warning = null, plannedCredits = creditsCharged, cacheKey = null, promptVersion = null, internalCostUsd = 0 }) {
   const id = randomUUID();
   db.prepare(`INSERT INTO project_versions
-    (id, project_id, config_json, output_url, credits_charged, created_at, status, warning, planned_credits)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, projectId, JSON.stringify(config), outputUrl, creditsCharged, now(), status, warning, plannedCredits);
+    (id, project_id, config_json, output_url, credits_charged, created_at, status, warning, planned_credits,
+     cache_key, prompt_version, internal_cost_usd)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, projectId, JSON.stringify(config), outputUrl, creditsCharged, now(), status, warning, plannedCredits,
+      cacheKey, promptVersion, internalCostUsd);
   return id;
+}
+
+export function getCachedVersion({ projectId, cacheKey }) {
+  return db.prepare(`SELECT * FROM project_versions
+    WHERE project_id = ? AND cache_key = ? AND status = 'complete' ORDER BY created_at DESC LIMIT 1`)
+    .get(projectId, cacheKey) ?? null;
 }
 
 export function listVersions(projectId) {
@@ -233,6 +241,99 @@ export function getLatestSourceAsset(projectId) {
 }
 
 // ---------------------------------------------------------------------------
+// SERVER-OWNED CUSTOMIZATION CATALOGS
+// ---------------------------------------------------------------------------
+
+export function getCustomizationCatalog() {
+  return {
+    tintLevels: db.prepare(`SELECT id, code, display_name, vlt_percent, preview_swatch, sort_order
+      FROM tint_levels WHERE is_active = 1 ORDER BY sort_order`).all(),
+    tintZones: db.prepare(`SELECT id, code, display_name, sort_order
+      FROM tint_zones WHERE is_active = 1 ORDER BY sort_order`).all(),
+    wrapFinishes: db.prepare(`SELECT id, code, display_name, sort_order
+      FROM wrap_finishes WHERE is_active = 1 ORDER BY sort_order`).all(),
+    wrapColors: db.prepare(`SELECT id, code, display_name, hex, family, sort_order
+      FROM wrap_colors WHERE is_active = 1 ORDER BY sort_order`).all(),
+    wrapOptions: db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.sort_order,
+        c.id AS color_id, c.code AS color_code, c.display_name AS color_name, c.hex, c.family,
+        f.id AS finish_id, f.code AS finish_code, f.display_name AS finish_name
+      FROM wrap_options o JOIN wrap_colors c ON c.id = o.color_id JOIN wrap_finishes f ON f.id = o.finish_id
+      WHERE o.is_active = 1 AND c.is_active = 1 AND f.is_active = 1 ORDER BY o.sort_order`).all(),
+    wheelColors: db.prepare(`SELECT id, code, display_name, preview_swatch, finish_code, sort_order
+      FROM wheel_color_options WHERE is_active = 1 ORDER BY sort_order`).all(),
+  };
+}
+
+export function resolveCatalogOperations(operations) {
+  return operations.map((operation) => {
+    if (operation.kind === 'wrap' && operation.optionId) {
+      const row = db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.prompt_fragment,
+          c.display_name AS color, c.hex, f.display_name AS finish
+        FROM wrap_options o JOIN wrap_colors c ON c.id=o.color_id JOIN wrap_finishes f ON f.id=o.finish_id
+        WHERE o.id=? AND o.is_active=1 AND c.is_active=1 AND f.is_active=1`).get(operation.optionId);
+      if (!row) throw Object.assign(new Error('опция плёнки не найдена'), { statusCode: 400 });
+      return { kind: 'wrap', optionId: row.id, color: row.color, hex: row.hex, finish: row.finish, promptFragment: row.prompt_fragment };
+    }
+    if (operation.kind === 'tint' && operation.levelId && operation.zoneId) {
+      const level = db.prepare('SELECT * FROM tint_levels WHERE id=? AND is_active=1').get(operation.levelId);
+      const zone = db.prepare('SELECT * FROM tint_zones WHERE id=? AND is_active=1').get(operation.zoneId);
+      if (!level || !zone) throw Object.assign(new Error('опция тонировки не найдена'), { statusCode: 400 });
+      return { kind: 'tint', levelId: level.id, zoneId: zone.id, name: level.display_name, level: String(level.vlt_percent), zone: zone.display_name, promptFragment: `${level.prompt_fragment} ${zone.prompt_fragment}` };
+    }
+    if (operation.kind === 'wheel_recolor' && operation.optionId) {
+      const row = db.prepare('SELECT * FROM wheel_color_options WHERE id=? AND is_active=1').get(operation.optionId);
+      if (!row) throw Object.assign(new Error('цвет дисков не найден'), { statusCode: 400 });
+      return { kind: 'wheel_recolor', optionId: row.id, name: row.display_name, color: row.preview_swatch, finish: row.finish_code, promptFragment: row.prompt_fragment };
+    }
+    if (operation.kind === 'wheel_replace' && operation.variantId) {
+      const row = db.prepare(`SELECT v.id, v.size_label, v.color, v.finish, v.spoke_style,
+          b.name AS brand, m.name AS model, m.prompt_fragment,
+          r.id AS reference_id, r.url AS reference_url, r.fal_url, r.watermark_free_confirmed
+        FROM wheel_variants v JOIN wheel_models m ON m.id=v.model_id JOIN wheel_brands b ON b.id=m.brand_id
+        LEFT JOIN wheel_reference_images r ON r.id=(SELECT id FROM wheel_reference_images
+          WHERE variant_id=v.id AND angle='three_quarter' ORDER BY created_at LIMIT 1)
+        WHERE v.id=? AND v.visible=1 AND m.visible=1 AND b.visible=1`).get(operation.variantId);
+      if (!row || !row.reference_url || !row.watermark_free_confirmed) throw Object.assign(new Error('диск или подтверждённый reference не найден'), { statusCode: 400 });
+      return {
+        kind: 'wheel_replace', variantId: row.id, name: `${row.brand} ${row.model}`, color: row.color,
+        referenceImage: row.reference_url,
+        reference: { id: row.reference_id, fal_url: row.fal_url },
+        promptFragment: `Replace the wheels on the car in the first image with the exact wheel design shown in the second image. Match the reference wheel's spokes, style and finish as closely as possible. ${row.prompt_fragment || ''}`.trim(),
+      };
+    }
+    // Legacy saved drafts remain usable in mock mode. Live requests are checked
+    // in generation.mjs and must use catalog ids.
+    return { ...operation, promptFragment: operation.promptFragment || legacyPrompt(operation) };
+  });
+}
+
+function legacyPrompt(operation) {
+  if (operation.kind === 'wrap') return `Change only the car body color to ${operation.color} with a ${operation.finish} professional automotive wrap.`;
+  if (operation.kind === 'tint') return `Apply approximately ${operation.level}% VLT professional automotive tint to the side and rear windows. Keep the windshield unchanged.`;
+  if (operation.kind === 'wheel_recolor') return `Recolor only the existing wheels ${operation.name}.`;
+  return `Replace only the wheels with ${operation.name}.`;
+}
+
+export function cacheWheelReferenceFalUrl({ referenceId, falUrl }) {
+  db.prepare('UPDATE wheel_reference_images SET fal_url=?, fal_uploaded_at=? WHERE id=?').run(falUrl, now(), referenceId);
+}
+
+export function consumeGenerationAttempt({ userId, ipHash, limit = 6 }) {
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const userCount = db.prepare('SELECT COUNT(*) AS count FROM generation_attempts WHERE user_id=? AND created_at>=?').get(userId, since).count;
+  const ipCount = db.prepare('SELECT COUNT(*) AS count FROM generation_attempts WHERE ip_hash=? AND created_at>=?').get(ipHash, since).count;
+  if (userCount >= limit || ipCount >= limit) return false;
+  db.prepare('INSERT INTO generation_attempts (id,user_id,ip_hash,created_at) VALUES (?,?,?,?)').run(randomUUID(), userId, ipHash, now());
+  db.prepare('DELETE FROM generation_attempts WHERE created_at < ?').run(new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+  return true;
+}
+
+export function recordAiJob({ userId, projectId, provider, latencyMs, costUsd, attempts = 1, error = null, creditsCharged = 0 }) {
+  db.prepare(`INSERT INTO ai_jobs (id,user_id,project_id,provider,latency_ms,cost_usd,attempts,error,credits_charged,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`).run(randomUUID(), userId, projectId, provider, latencyMs, costUsd, attempts, error, creditsCharged, now());
+}
+
+// ---------------------------------------------------------------------------
 // КРЕДИТЫ (кошелёк) — деньги пользователя внутри сервиса
 // ---------------------------------------------------------------------------
 
@@ -288,7 +389,7 @@ function decodeWheelCursor(cursor) {
   } catch { return null; }
 }
 
-export function listWheels({ search = '', brand = '', kind = '', diameter = null, finish = '', color = '', cursor = '', limit = 24 }) {
+export function listWheels({ search = '', brand = '', kind = '', diameter = null, finish = '', color = '', style = '', cursor = '', limit = 24 }) {
   const safeLimit = Math.min(48, Math.max(1, Number(limit) || 24));
   const clauses = ['m.visible = 1', 'v.visible = 1', 'b.visible = 1', 'r.id IS NOT NULL'];
   const values = [];
@@ -303,6 +404,7 @@ export function listWheels({ search = '', brand = '', kind = '', diameter = null
   if (Number.isFinite(Number(diameter)) && Number(diameter) > 0) { clauses.push('v.diameter = ?'); values.push(Number(diameter)); }
   if (finish) { clauses.push('v.finish = ?'); values.push(finish); }
   if (color) { clauses.push('v.color = ?'); values.push(color); }
+  if (style) { clauses.push('v.spoke_style = ?'); values.push(style); }
   const decoded = decodeWheelCursor(cursor);
   if (decoded) {
     clauses.push('(m.popularity < ? OR (m.popularity = ? AND v.id > ?))');
@@ -312,7 +414,7 @@ export function listWheels({ search = '', brand = '', kind = '', diameter = null
   const rows = db.prepare(`
     SELECT v.id, b.name AS brand, b.slug AS brand_slug, b.is_oem,
            m.name AS model, m.supplier, m.price_cents, m.affiliate_link, m.popularity,
-           v.size_label, v.diameter, v.color, v.finish, v.bolt_pattern, v.offset, v.center_bore,
+           v.size_label, v.diameter, v.color, v.finish, v.spoke_style,
            r.url AS image_url, r.angle AS image_angle
       FROM wheel_variants v
       JOIN wheel_models m ON m.id = v.model_id
@@ -334,6 +436,7 @@ export function listWheelFacets() {
     diameters: db.prepare('SELECT DISTINCT diameter FROM wheel_variants WHERE visible = 1 ORDER BY diameter').all().map((row) => row.diameter),
     finishes: db.prepare('SELECT DISTINCT finish FROM wheel_variants WHERE visible = 1 ORDER BY finish').all().map((row) => row.finish),
     colors: db.prepare('SELECT DISTINCT color FROM wheel_variants WHERE visible = 1 ORDER BY color').all().map((row) => row.color),
+    styles: db.prepare('SELECT DISTINCT spoke_style FROM wheel_variants WHERE visible = 1 AND spoke_style IS NOT NULL ORDER BY spoke_style').all().map((row) => row.spoke_style),
   };
 }
 
@@ -347,7 +450,7 @@ export function toggleFavoriteWheel({ userId, variantId }) {
 
 const wheelSelect = `
   SELECT v.id, b.name AS brand, b.slug AS brand_slug, b.is_oem, m.name AS model,
-         m.popularity, v.size_label, v.diameter, v.color, v.finish,
+         m.popularity, v.size_label, v.diameter, v.color, v.finish, v.spoke_style,
          r.url AS image_url
     FROM wheel_variants v JOIN wheel_models m ON m.id = v.model_id
     JOIN wheel_brands b ON b.id = m.brand_id
@@ -384,10 +487,11 @@ export function setWheelVisibility({ variantId, visible, actorUserId }) {
   if (visible) {
     const legal = db.prepare(`SELECT m.image_rights_source, m.image_rights_basis,
       (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.angle = 'front') AS front_refs,
-      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.angle = 'three_quarter') AS three_quarter_refs
+      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.angle = 'three_quarter') AS three_quarter_refs,
+      (SELECT COUNT(*) FROM wheel_reference_images r WHERE r.variant_id = v.id AND r.watermark_free_confirmed = 0) AS unconfirmed_refs
       FROM wheel_variants v JOIN wheel_models m ON m.id = v.model_id WHERE v.id = ?`).get(variantId);
-    if (!legal || !legal.image_rights_source || !legal.image_rights_basis || !legal.front_refs || !legal.three_quarter_refs) {
-      const error = new Error('нельзя публиковать без front + ¾ reference и основания прав');
+    if (!legal || !legal.image_rights_source || !legal.image_rights_basis || !legal.front_refs || !legal.three_quarter_refs || legal.unconfirmed_refs) {
+      const error = new Error('нельзя публиковать без front + ¾ reference, основания прав и подтверждения отсутствия водяного знака');
       error.statusCode = 409;
       throw error;
     }
@@ -449,15 +553,15 @@ export function importWheelCatalogEntries(entries) {
   }
 }
 
-export function addWheelReferenceImage({ variantId, url, mimeType, width, height, hasAlpha, angle, rightsSource, rightsBasis, actorUserId }) {
+export function addWheelReferenceImage({ variantId, url, mimeType, width, height, hasAlpha, angle, rightsSource, rightsBasis, watermarkFreeConfirmed = false, actorUserId }) {
   const variant = db.prepare('SELECT id FROM wheel_variants WHERE id = ?').get(variantId);
   if (!variant) return null;
   const id = randomUUID();
   db.prepare(`INSERT INTO wheel_reference_images
-    (id, variant_id, angle, url, mime_type, width, height, has_alpha, is_primary, rights_source, rights_basis, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    (id, variant_id, angle, url, mime_type, width, height, has_alpha, is_primary, rights_source, rights_basis, created_at, watermark_free_confirmed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(id, variantId, angle, url, mimeType, width, height, hasAlpha ? 1 : 0,
-      angle === 'front' ? 1 : 0, rightsSource, rightsBasis, now());
+      angle === 'front' ? 1 : 0, rightsSource, rightsBasis, now(), watermarkFreeConfirmed ? 1 : 0);
   writeAuditLog({ actorUserId, action: 'wheel.reference_upload', entityType: 'wheel_variant', entityId: variantId, details: { angle, width, height } });
   return { id, url };
 }
@@ -512,8 +616,8 @@ export function getProductAnalytics({ days = 30, recentLimit = 30 } = {}) {
   const created = projectCounts.project_created || 0;
   const uploaded = projectCounts.photo_uploaded || 0;
   const generated = db.prepare(`SELECT COUNT(DISTINCT project_id) AS count FROM product_events
-    WHERE created_at >= ? AND event_name IN ('mock_generation_succeeded', 'mock_generation_failed')`).get(since).count;
-  const succeeded = projectCounts.mock_generation_succeeded || 0;
+    WHERE created_at >= ? AND event_name IN ('mock_generation_succeeded', 'mock_generation_failed', 'generation_succeeded', 'generation_failed')`).get(since).count;
+  const succeeded = (projectCounts.mock_generation_succeeded || 0) + (projectCounts.generation_succeeded || 0);
   const reported = projectCounts.result_reported || 0;
   const percent = (value, base) => base > 0 ? Math.round((value / base) * 100) : 0;
   const funnel = {

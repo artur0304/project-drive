@@ -28,12 +28,12 @@ const created = db.createWheelCatalogEntry({
 assert.throws(() => db.setWheelVisibility({ variantId: created.id, visible: true, actorUserId: user.id }), /reference/);
 db.addWheelReferenceImage({
   variantId: created.id, url: '/wheel-uploads/test.png', mimeType: 'image/png', width: 512, height: 512,
-  hasAlpha: true, angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Owned photo', actorUserId: user.id,
+  hasAlpha: true, angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Owned photo', watermarkFreeConfirmed: true, actorUserId: user.id,
 });
 assert.throws(() => db.setWheelVisibility({ variantId: created.id, visible: true, actorUserId: user.id }), /¾ reference/);
 db.addWheelReferenceImage({
   variantId: created.id, url: '/wheel-uploads/test-3q.png', mimeType: 'image/png', width: 512, height: 512,
-  hasAlpha: true, angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Owned photo', actorUserId: user.id,
+  hasAlpha: true, angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Owned photo', watermarkFreeConfirmed: true, actorUserId: user.id,
 });
 assert.equal(db.setWheelVisibility({ variantId: created.id, visible: true, actorUserId: user.id }).visible, true);
 assert.ok(db.listAuditLog().some((entry) => entry.action === 'wheel.publish'));

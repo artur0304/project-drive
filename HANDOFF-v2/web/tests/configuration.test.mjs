@@ -26,3 +26,15 @@ test('неизвестная цена не превращается в тихи�
     /Missing server price/,
   );
 });
+
+test('catalog ids уходят на сервер вместо свободного текста', () => {
+  assert.deepEqual(operationsFromDraft({
+    wrap: { optionId: 'wrap-deep-navy-metallic', color: 'Deep Navy', finish: 'Metallic' },
+    tint: { levelId: 'tint-dark', zoneId: 'zone-all', name: 'Dark', level: '35' },
+    wheel: { kind: 'wheel_recolor', optionId: 'wheel-color-bronze', name: 'Bronze', color: '#8A5A2E' },
+  }), [
+    { kind: 'wrap', optionId: 'wrap-deep-navy-metallic' },
+    { kind: 'tint', levelId: 'tint-dark', zoneId: 'zone-all' },
+    { kind: 'wheel_recolor', name: 'Bronze', color: '#8A5A2E', optionId: 'wheel-color-bronze' },
+  ]);
+});

@@ -27,9 +27,9 @@ export default function WheelCatalog({ draft, onSelect, generationCost = 20 }) {
   const viewportRef = useRef(null);
   const [mode, setMode] = useState('popular');
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ kind: '', diameter: '', finish: '', color: '', brand: '' });
+  const [filters, setFilters] = useState({ kind: '', diameter: '', finish: '', color: '', brand: '', style: '' });
   const [items, setItems] = useState([]);
-  const [facets, setFacets] = useState({ brands: [], diameters: [], finishes: [], colors: [] });
+  const [facets, setFacets] = useState({ brands: [], diameters: [], finishes: [], colors: [], styles: [] });
   const [nextCursor, setNextCursor] = useState(null);
   const [favorites, setFavorites] = useState(new Set());
   const [scrollTop, setScrollTop] = useState(0);
@@ -109,6 +109,7 @@ export default function WheelCatalog({ draft, onSelect, generationCost = 20 }) {
       <div className="catalogSelects">
         <label>Brand<select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}><option value="">All brands</option>{facets.brands.map((brand) => <option key={brand.slug} value={brand.slug}>{brand.name}</option>)}</select></label>
         <label>Color<select value={filters.color} onChange={(event) => setFilters((current) => ({ ...current, color: event.target.value }))}><option value="">All colors</option>{facets.colors.map((color) => <option key={color} value={color}>{color}</option>)}</select></label>
+        <label>Spoke style<select value={filters.style} onChange={(event) => setFilters((current) => ({ ...current, style: event.target.value }))}><option value="">All styles</option>{facets.styles.map((style) => <option key={style} value={style}>{style.replaceAll('_', ' ')}</option>)}</select></label>
       </div>
     </>}
     {error && <p className="catalogMessage error">{error}</p>}

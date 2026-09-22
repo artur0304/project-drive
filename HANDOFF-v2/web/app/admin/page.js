@@ -15,7 +15,7 @@ function eventLabel(name) {
 export default function AdminPage() {
   const [data, setData] = useState(null);
   const [wheel, setWheel] = useState(EMPTY_WHEEL);
-  const [reference, setReference] = useState({ variantId: '', file: null, angle: 'front', rightsSource: '', rightsBasis: '' });
+  const [reference, setReference] = useState({ variantId: '', file: null, angle: 'front', rightsSource: '', rightsBasis: '', watermarkFreeConfirmed: false });
   const [credit, setCredit] = useState({ userId: '', delta: '', reason: '' });
   const [message, setMessage] = useState('');
   const token = getToken();
@@ -47,7 +47,7 @@ export default function AdminPage() {
   async function uploadReference(event) {
     event.preventDefault();
     if (!reference.file) return setMessage('Choose a PNG or WebP file.');
-    const params = new URLSearchParams({ angle: reference.angle, rightsSource: reference.rightsSource, rightsBasis: reference.rightsBasis });
+    const params = new URLSearchParams({ angle: reference.angle, rightsSource: reference.rightsSource, rightsBasis: reference.rightsBasis, watermarkFreeConfirmed: String(reference.watermarkFreeConfirmed) });
     try {
       await apiRequest(`/api/admin/wheels/${encodeURIComponent(reference.variantId)}/reference?${params}`, {
         method: 'POST', token, body: reference.file, headers: { 'Content-Type': reference.file.type },
@@ -87,6 +87,7 @@ export default function AdminPage() {
           <label>Variant<select required value={reference.variantId} onChange={(event) => setReference((current) => ({ ...current, variantId: event.target.value }))}><option value="">Choose</option>{data.wheels.map((item) => <option key={item.id} value={item.id}>{item.brand} {item.model} {item.size_label}</option>)}</select></label>
           <label>Angle<select value={reference.angle} onChange={(event) => setReference((current) => ({ ...current, angle: event.target.value }))}><option value="front">Front</option><option value="three_quarter">¾ view</option></select></label>
           {['rightsSource', 'rightsBasis'].map((name) => <label key={name}>{name}<input required value={reference[name]} onChange={(event) => setReference((current) => ({ ...current, [name]: event.target.value }))} /></label>)}
+          <label className="adminCheck"><input required type="checkbox" checked={reference.watermarkFreeConfirmed} onChange={(event) => setReference((current) => ({ ...current, watermarkFreeConfirmed: event.target.checked }))} /> I confirm rights and no watermark</label>
           <input required type="file" accept="image/png,image/webp" onChange={(event) => setReference((current) => ({ ...current, file: event.target.files?.[0] || null }))} /><button type="submit">Validate and upload</button>
         </form></section>
 

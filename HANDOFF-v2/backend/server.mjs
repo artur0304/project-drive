@@ -24,7 +24,7 @@ import { createServer } from 'node:http';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import * as db from './db.mjs';
 import * as auth from './auth.mjs';   // вход/регистрация
 import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
@@ -221,6 +221,9 @@ export const server = createServer(async (req, res) => {
     if (method === 'GET' && path === '/api/pricing') {
       return send(res, 200, { operations: PRICE });
     }
+    if (method === 'GET' && path === '/api/catalog/customization') {
+      return send(res, 200, db.getCustomizationCatalog());
+    }
 
     const publicShareMatch = path.match(/^\/api\/public\/results\/([a-f0-9]{64})$/i);
     if (method === 'GET' && publicShareMatch) {
@@ -233,7 +236,7 @@ export const server = createServer(async (req, res) => {
       const result = db.listWheels({
         search: url.searchParams.get('q') || '', brand: url.searchParams.get('brand') || '',
         kind: url.searchParams.get('kind') || '', diameter: url.searchParams.get('diameter'),
-        finish: url.searchParams.get('finish') || '', color: url.searchParams.get('color') || '',
+        finish: url.searchParams.get('finish') || '', color: url.searchParams.get('color') || '', style: url.searchParams.get('style') || '',
         cursor: url.searchParams.get('cursor') || '', limit: url.searchParams.get('limit') || 24,
       });
       return send(res, 200, { ...result, facets: db.listWheelFacets() });
@@ -296,8 +299,9 @@ export const server = createServer(async (req, res) => {
       if (method === 'POST' && referenceMatch) {
         const rightsSource = String(url.searchParams.get('rightsSource') || '').trim().slice(0, 250);
         const rightsBasis = String(url.searchParams.get('rightsBasis') || '').trim().slice(0, 250);
+        const watermarkFreeConfirmed = url.searchParams.get('watermarkFreeConfirmed') === 'true';
         const angle = url.searchParams.get('angle');
-        if (!rightsSource || !rightsBasis || !['front', 'three_quarter'].includes(angle)) return send(res, 400, { error: 'нужны источник, основание прав и ракурс' });
+        if (!rightsSource || !rightsBasis || !watermarkFreeConfirmed || !['front', 'three_quarter'].includes(angle)) return send(res, 400, { error: 'нужны источник, основание прав, ракурс и подтверждение отсутствия водяного знака' });
         let raw;
         try { raw = await readRaw(req, 10 * 1024 * 1024); } catch { return send(res, 413, { error: 'файл больше 10 МБ' }); }
         const contentType = String(req.headers['content-type'] || '').split(';')[0];
@@ -308,7 +312,7 @@ export const server = createServer(async (req, res) => {
         const saved = db.addWheelReferenceImage({
           variantId: decodeURIComponent(referenceMatch[1]), url: `/wheel-uploads/${fileName}`,
           mimeType: contentType, width: image.width, height: image.height, hasAlpha: image.hasAlpha,
-          angle, rightsSource, rightsBasis, actorUserId: user.id,
+          angle, rightsSource, rightsBasis, watermarkFreeConfirmed, actorUserId: user.id,
         });
         return saved ? send(res, 201, saved) : send(res, 404, { error: 'диск не найден' });
       }
@@ -519,7 +523,10 @@ export const server = createServer(async (req, res) => {
       // После нормализации любой разрешённый вход хранится как JPEG без EXIF/GPS.
       const fname = randomUUID() + '.jpg';
       writeFileSync(join(UP, fname), buf);
-      const assetId = db.addSourceAsset({ projectId: project.id, url: '/uploads/' + fname });
+      const assetId = db.addSourceAsset({
+        projectId: project.id, url: '/uploads/' + fname,
+        contentSha256: createHash('sha256').update(buf).digest('hex'),
+      });
       db.recordProductEvent({ userId: user.id, projectId: project.id, eventName: 'photo_uploaded', details: { width: preflight.width, height: preflight.height, originalBytes } });
       return send(res, 201, { id: assetId, url: '/uploads/' + fname, bytes: buf.length, originalBytes, normalized: true, preflight });
     }
@@ -527,14 +534,14 @@ export const server = createServer(async (req, res) => {
     // --- раздача загруженных файлов (ТОЛЬКО для локальной разработки) ---
     // TODO(prod): в проде файлы приватные, отдаются по временным (signed) ссылкам,
     // а не так свободно. Это лишь чтобы посмотреть загруженное на localhost.
-    const uploadMatch = method === 'GET' && path.match(/^\/uploads\/([0-9a-f-]{36}\.jpg)$/i);
+    const uploadMatch = method === 'GET' && path.match(/^\/uploads\/([0-9a-f-]{36}\.(?:jpg|png))$/i);
     if (uploadMatch) {
       // Сервер сам создаёт имена как UUID.jpg. Строгий шаблон не позволяет
       // использовать этот маршрут для чтения произвольного файла с диска.
       const f = join(UP, uploadMatch[1]);
       if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
       res.writeHead(200, {
-        'Content-Type': 'image/jpeg',
+        'Content-Type': f.endsWith('.png') ? 'image/png' : 'image/jpeg',
         'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'same-origin',
@@ -604,7 +611,8 @@ export const server = createServer(async (req, res) => {
       const user = auth.checkSession(tokenFrom(req));
       if (!user) return send(res, 401, { error: 'нужен вход' });
       const { projectId, operations } = await readBody(req);
-      const r = await generateForProject({ db, userId: user.id, projectId, operations });
+      const ipHash = createHash('sha256').update(String(req.socket.remoteAddress || 'unknown')).digest('hex');
+      const r = await generateForProject({ db, userId: user.id, projectId, operations, ipHash, requestId: requestContext.requestId });
       const ownedProject = db.getProject(projectId);
       // Не создаём событие для случайного/чужого projectId: иначе внешний ключ
       // превратил бы корректный 404 в серверную ошибку и засорил аналитику.
@@ -612,8 +620,8 @@ export const server = createServer(async (req, res) => {
         db.recordProductEvent({
           userId: user.id, projectId,
           versionId: r.versionId || null,
-          eventName: r.ok ? 'mock_generation_succeeded' : 'mock_generation_failed',
-          details: { statusCode: r.code, creditsCharged: r.creditsCharged || 0, operationCount: Array.isArray(operations) ? operations.length : 0 },
+          eventName: r.ok ? 'generation_succeeded' : 'generation_failed',
+          details: { mode: process.env.PROJECT_DRIVE_AI_MODE || 'mock', cached: Boolean(r.cached), statusCode: r.code, creditsCharged: r.creditsCharged || 0, operationCount: Array.isArray(operations) ? operations.length : 0 },
         });
       }
       return send(res, r.ok ? 201 : r.code, r);

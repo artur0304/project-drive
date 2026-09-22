@@ -1,6 +1,9 @@
 // ============================================================================
 
 import { planGeneration } from './generation-planner.mjs';
+import { createHash } from 'node:crypto';
+import { buildPrompt, PROMPT_VERSION } from './prompt-builder.mjs';
+import { createFalProvider } from './fal-provider.mjs';
 // generation.mjs — "мозг" генерации на стороне сервера.
 // ----------------------------------------------------------------------------
 // Здесь считается ЦЕНА (на сервере, не доверяя клиенту), вызывается AI и
@@ -44,25 +47,32 @@ export function validateOperations(operations) {
     groups.add(group);
 
     if (kind === 'wrap') {
+      const optionId = cleanText(raw.optionId, 100);
+      if (optionId) { normalized.push({ kind, optionId }); continue; }
       const color = cleanText(raw.color, 80);
       const finish = cleanText(raw.finish, 32);
       if (!color || !finish) return { ok: false, error: 'для плёнки нужны цвет и покрытие' };
       normalized.push({ kind, color, finish });
     } else if (kind === 'tint') {
+      const levelId = cleanText(raw.levelId, 100);
+      const zoneId = cleanText(raw.zoneId, 100);
+      if (levelId && zoneId) { normalized.push({ kind, levelId, zoneId }); continue; }
       const name = cleanText(raw.name, 80);
       const level = cleanText(raw.level, 20);
       if (!name || !level) return { ok: false, error: 'для тонировки нужны название и уровень' };
       normalized.push({ kind, name, level });
     } else {
+      const optionId = cleanText(raw.optionId, 100);
       const name = cleanText(raw.name, 120);
       const color = raw.color == null ? null : cleanText(raw.color, 32);
       const variantId = raw.variantId == null ? null : cleanText(raw.variantId, 100);
       const referenceImage = raw.referenceImage == null ? null : cleanText(raw.referenceImage, 500);
-      if (!name || (raw.color != null && !color)) return { ok: false, error: 'неверные параметры дисков' };
+      if (kind === 'wheel_recolor' && optionId) { normalized.push({ kind, optionId }); continue; }
+      if ((!name && !variantId) || (raw.color != null && !color)) return { ok: false, error: 'неверные параметры дисков' };
       if (referenceImage && !referenceImage.match(/^\/(?:wheel-catalog|wheel-uploads)\/[a-z0-9._-]+$/i)) {
         return { ok: false, error: 'неверная ссылка reference-изображения' };
       }
-      normalized.push({ kind, name, ...(color ? { color } : {}), ...(variantId ? { variantId } : {}), ...(referenceImage ? { referenceImage } : {}) });
+      normalized.push({ kind, ...(name ? { name } : {}), ...(color ? { color } : {}), ...(variantId ? { variantId } : {}), ...(referenceImage ? { referenceImage } : {}) });
     }
   }
   return { ok: true, operations: normalized };
@@ -88,10 +98,30 @@ async function mockGenerate({ sourceImage, operations, forceFail = false }) {
 }
 
 // Оркестратор: одна попытка + один ретрай (упрощённо; в slice0 есть и fallback).
-async function runProvider(args) {
+async function runMockProvider(args) {
   let res = await mockGenerate(args);
   if (!res.ok) res = await mockGenerate(args);        // ретрай один раз
   return res;
+}
+
+function cacheKeyFor(asset, operations) {
+  const normalized = operations.map((operation) => {
+    if (operation.kind === 'wrap' || operation.kind === 'wheel_recolor') return `${operation.kind}:${operation.optionId || `${operation.color}:${operation.finish}`}`;
+    if (operation.kind === 'tint') return `tint:${operation.levelId || operation.level}:${operation.zoneId || 'legacy'}`;
+    return `wheel_replace:${operation.variantId || operation.name}`;
+  }).sort();
+  return createHash('sha256').update(JSON.stringify({ source: asset.content_sha256 || asset.id || asset.url, normalized, promptVersion: PROMPT_VERSION })).digest('hex');
+}
+
+function usesCatalogIds(operation) {
+  if (operation.kind === 'tint') return Boolean(operation.levelId && operation.zoneId);
+  if (operation.kind === 'wheel_replace') return Boolean(operation.variantId);
+  return Boolean(operation.optionId);
+}
+
+function publicOperation(operation) {
+  const { reference, promptFragment, ...safe } = operation;
+  return safe;
 }
 
 // ============================================================================
@@ -103,7 +133,7 @@ async function runProvider(args) {
 //   4) успех -> сохранить версию;  провал -> ВЕРНУТЬ кредиты (не берём за брак)
 // ============================================================================
 export async function generateForProject({
-  db, userId, projectId, operations, forceFail = false, provider = runProvider,
+  db, userId, projectId, operations, forceFail = false, provider = null, ipHash = 'local', requestId = null,
 }) {
   const validation = validateOperations(operations);
   if (!validation.ok) return { ok: false, code: 400, error: validation.error };
@@ -116,7 +146,26 @@ export async function generateForProject({
   const asset = db.getLatestSourceAsset(projectId);
   if (!asset?.url) return { ok: false, code: 409, error: 'сначала загрузи фотографию машины' };
 
-  const cost = costOf(safeOperations);
+  const mode = String(process.env.PROJECT_DRIVE_AI_MODE || 'mock').toLowerCase();
+  if (!['mock', 'live'].includes(mode)) return { ok: false, code: 503, error: 'неверный режим AI' };
+  if (mode === 'live' && safeOperations.some((operation) => !usesCatalogIds(operation))) {
+    return { ok: false, code: 400, error: 'для живой генерации выберите опции из каталога' };
+  }
+
+  let resolvedOperations;
+  try { resolvedOperations = db.resolveCatalogOperations(safeOperations); }
+  catch (error) { return { ok: false, code: error.statusCode || 400, error: error.message }; }
+
+  const cacheKey = cacheKeyFor(asset, resolvedOperations);
+  const cached = db.getCachedVersion({ projectId, cacheKey });
+  if (cached) return { ok: true, cached: true, versionId: cached.id, outputUrl: cached.output_url, creditsCharged: 0, plan: [] };
+
+  if (mode === 'live') {
+    const limit = Math.max(1, Number(process.env.PROJECT_DRIVE_GENERATIONS_PER_HOUR || 6));
+    if (!db.consumeGenerationAttempt({ userId, ipHash, limit })) return { ok: false, code: 429, error: 'лимит генераций исчерпан; попробуйте через час' };
+  }
+
+  const cost = costOf(resolvedOperations);
 
   // 2) списываем кредиты заранее. spendCredits вернёт false, если не хватает.
   const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
@@ -130,28 +179,47 @@ export async function generateForProject({
     refunded += safeAmount;
   }
 
-  const plan = planGeneration(safeOperations, PRICE);
+  const plan = planGeneration(resolvedOperations, PRICE);
+  const selectedProvider = provider || (mode === 'live' ? createFalProvider({ db }) : runMockProvider);
   let currentImage = asset.url;
   let completedCredits = 0;
+  let internalCostUsd = 0;
   const completedOperations = [];
 
   for (let index = 0; index < plan.length; index += 1) {
     const step = plan[index];
     let result;
     try {
-      result = await provider({ sourceImage: currentImage, operations: step.operations, forceFail, step });
+      const prompt = buildPrompt(step.operations);
+      const wheel = step.operations.find((operation) => operation.kind === 'wheel_replace');
+      const startedAt = Date.now();
+      result = await selectedProvider({
+        sourceImage: currentImage, operations: step.operations, forceFail, step, prompt,
+        referenceImage: wheel?.referenceImage || null, reference: wheel?.reference || null, requestId,
+      });
+      if (mode === 'live') db.recordAiJob({
+        userId, projectId, provider: result.provider || 'fal', latencyMs: Date.now() - startedAt,
+        costUsd: result.costUsd || 0, error: result.ok ? null : result.error, creditsCharged: result.ok ? step.credits : 0,
+      });
     } catch {
       result = { ok: false, error: 'provider_error' };
     }
+    internalCostUsd += Number(result.costUsd || 0);
     if (!result.ok) {
       refund(cost - completedCredits, result.error === 'provider_error' ? 'refund:provider_error' : 'refund:generate_failed');
       if (!completedOperations.length) {
-        return { ok: false, code: 502, error: 'генерация не удалась, кредиты возвращены', refundedCredits: refunded };
+        const message = result.error === 'result_unchanged'
+          ? 'не удалось применить изменение, попробуйте другой вариант; кредиты возвращены'
+          : result.error === 'lifetime_budget_exceeded' || result.error === 'daily_budget_exceeded'
+            ? 'лимит расходов AI достигнут; кредиты возвращены'
+            : 'генерация не удалась, кредиты возвращены';
+        return { ok: false, code: result.error?.includes('budget_exceeded') ? 503 : 502, error: message, refundedCredits: refunded };
       }
       try {
         const versionId = db.createVersion({
-          projectId, config: completedOperations, outputUrl: currentImage, creditsCharged: completedCredits,
+          projectId, config: completedOperations.map(publicOperation), outputUrl: currentImage, creditsCharged: completedCredits,
           status: 'partial', warning: 'Часть изменений не выполнена; кредиты за неё возвращены.', plannedCredits: cost,
+          promptVersion: PROMPT_VERSION, internalCostUsd,
         });
         return {
           ok: true, partial: true, versionId, outputUrl: currentImage,
@@ -172,12 +240,12 @@ export async function generateForProject({
   let versionId;
   try {
     versionId = db.createVersion({
-      projectId, config: safeOperations, outputUrl: currentImage, creditsCharged: cost,
-      status: 'complete', plannedCredits: cost,
+      projectId, config: resolvedOperations.map(publicOperation), outputUrl: currentImage, creditsCharged: cost,
+      status: 'complete', plannedCredits: cost, cacheKey, promptVersion: PROMPT_VERSION, internalCostUsd,
     });
   } catch {
     refund(cost, 'refund:save_failed');
     return { ok: false, code: 500, error: 'результат не удалось сохранить, кредиты возвращены' };
   }
-  return { ok: true, versionId, creditsCharged: cost, outputUrl: currentImage, plan: plan.map((step) => step.id) };
+  return { ok: true, versionId, creditsCharged: cost, outputUrl: currentImage, internalCostUsd, plan: plan.map((step) => step.id) };
 }

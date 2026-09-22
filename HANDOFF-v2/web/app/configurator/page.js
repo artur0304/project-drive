@@ -19,7 +19,7 @@ import AuthGate from './auth-gate';
 import './configurator.css';
 
 const INITIAL_DRAFT = {
-  wrap: { color: 'Jet Black', hex: '#161616', finish: 'Gloss' },
+  wrap: { optionId: 'wrap-jet_black-gloss', color: 'Jet Black', hex: '#161616', finish: 'Gloss' },
   tint: null,
   wheel: null,
 };
@@ -39,6 +39,8 @@ export default function ConfiguratorPage() {
   const [authError, setAuthError] = useState('');
   const [walletBalance, setWalletBalance] = useState(null);
   const [pricing, setPricing] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+  const [wrapFamily, setWrapFamily] = useState('');
   const [generationError, setGenerationError] = useState('');
   const [sheetState, setSheetState] = useState('half');
   const [command, setCommand] = useState('');
@@ -85,6 +87,9 @@ export default function ConfiguratorPage() {
     apiRequest('/api/pricing', { token: '' })
       .then((data) => setPricing(data.operations))
       .catch(() => setPricing(null));
+    apiRequest('/api/catalog/customization', { token: '' })
+      .then(setCatalog)
+      .catch(() => setCatalog(null));
 
     const token = getToken();
     if (!token) return;
@@ -96,7 +101,7 @@ export default function ConfiguratorPage() {
   const operations = useMemo(() => {
     const result = [];
     if (draft.wrap) result.push({ key: 'wrap', label: `${draft.wrap.color} · ${draft.wrap.finish}`, cost: pricing?.wrap ?? 0 });
-    if (draft.tint) result.push({ key: 'tint', label: `${draft.tint.name} tint`, cost: pricing?.tint ?? 0 });
+    if (draft.tint) result.push({ key: 'tint', label: `${draft.tint.name} · ${draft.tint.zone}`, cost: pricing?.tint ?? 0 });
     if (draft.wheel) result.push({ key: 'wheel', label: draft.wheel.label, cost: pricing?.[draft.wheel.kind] ?? 0 });
     return result;
   }, [draft, pricing]);
@@ -104,14 +109,14 @@ export default function ConfiguratorPage() {
   const apiOperations = useMemo(() => operationsFromDraft(draft), [draft]);
   const total = costFromPricing(apiOperations, pricing);
 
-  function changeWrapColor(color, hex) {
-    setDraft((current) => ({ ...current, wrap: { color, hex, finish: current.wrap?.finish || 'Gloss' } }));
+  function selectWrap(option) {
+    setDraft((current) => ({ ...current, wrap: { optionId: option.id, color: option.color_name, hex: option.hex, finish: option.finish_name } }));
   }
-  function changeFinish(finish) {
-    setDraft((current) => ({ ...current, wrap: { ...(current.wrap || INITIAL_DRAFT.wrap), finish } }));
+  function selectTintLevel(level) {
+    setDraft((current) => ({ ...current, tint: { ...(current.tint || {}), levelId: level.id, name: level.display_name, level: String(level.vlt_percent), zoneId: current.tint?.zoneId || 'zone-all', zone: current.tint?.zone || 'All side + rear' } }));
   }
-  function selectTint(name, level) {
-    setDraft((current) => ({ ...current, tint: level ? { name, level } : null }));
+  function selectTintZone(zone) {
+    setDraft((current) => ({ ...current, tint: { ...(current.tint || { levelId: 'tint-dark', name: 'Dark', level: '35' }), zoneId: zone.id, zone: zone.display_name } }));
   }
   function selectWheel(name, detail, color, wheel) {
     setDraft((current) => ({ ...current, wheel: {
@@ -119,8 +124,8 @@ export default function ConfiguratorPage() {
       variantId: wheel?.id || null, referenceImage: wheel?.image_url || null,
     } }));
   }
-  function selectWheelColor(name, color) {
-    setDraft((current) => ({ ...current, wheel: { kind: 'wheel_recolor', label: `${name} wheels`, name, color } }));
+  function selectWheelColor(option) {
+    setDraft((current) => ({ ...current, wheel: { kind: 'wheel_recolor', optionId: option.id, label: `${option.display_name} wheels`, name: option.display_name, color: option.preview_swatch } }));
   }
   async function toggleFullscreen() {
     if (!document.fullscreenElement) await stageRef.current?.requestFullscreen?.();
@@ -270,17 +275,18 @@ export default function ConfiguratorPage() {
           </div>
         </header>
 
-        <section className="aiCommand" aria-label="Describe changes">
+        <details className="advancedMode"><summary>Advanced: describe changes</summary><section className="aiCommand" aria-label="Describe changes">
           <div><span>AI COMMAND</span><small>Creates a draft only</small></div>
           <div className="aiCommandRow"><input value={command} onChange={(event) => setCommand(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') prepareCommand(); }} placeholder="e.g. remove tint and make the wrap matte red" /><button type="button" onClick={prepareCommand}>Prepare</button></div>
           {commandPreview && <div className="commandPreview"><ul>{commandPreview.messages.map((message) => <li key={message}>{message}</li>)}</ul><div><button type="button" onClick={() => setCommandPreview(null)}>Cancel</button><button className="applyCommand" type="button" onClick={applyCommand}>Apply to draft</button></div></div>}
-        </section>
+        </section></details>
 
         <div className="panelBody">
-          {activeTab === 'wrap' && <WrapTab draft={draft} onColor={changeWrapColor} onFinish={changeFinish} />}
-          {activeTab === 'tint' && <TintTab draft={draft} onSelect={selectTint} />}
+          {!catalog && activeTab !== 'wheels' && <p className="catalogMessage">Loading catalog…</p>}
+          {catalog && activeTab === 'wrap' && <WrapTab draft={draft} catalog={catalog} family={wrapFamily} onFamily={setWrapFamily} onSelect={selectWrap} />}
+          {catalog && activeTab === 'tint' && <TintTab draft={draft} catalog={catalog} onZone={selectTintZone} onLevel={selectTintLevel} />}
           {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} generationCost={pricing?.wheel_replace ?? 20} />}
-          {activeTab === 'wcolor' && <WheelColorTab draft={draft} onSelect={selectWheelColor} />}
+          {catalog && activeTab === 'wcolor' && <WheelColorTab draft={draft} options={catalog.wheelColors} onSelect={selectWheelColor} />}
         </div>
 
         <GenerateFooter operations={operations} total={total} pricingReady={Boolean(pricing)} isGenerating={isGenerating} error={generationError} onGenerate={requestGeneration} />

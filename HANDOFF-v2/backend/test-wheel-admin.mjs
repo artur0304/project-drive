@@ -34,13 +34,13 @@ try {
   assert.equal(blocked.response.status, 409);
 
   const transparentPng = await sharp({ create: { width: 64, height: 64, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
-  const params = new URLSearchParams({ angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive' });
+  const params = new URLSearchParams({ angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive', watermarkFreeConfirmed: 'true' });
   const uploaded = await fetch(`${base}/api/admin/wheels/${variantId}/reference?${params}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: transparentPng,
   });
   assert.equal(uploaded.status, 201);
   assert.equal((await json(`/api/admin/wheels/${variantId}`, { method: 'PATCH', token, body: { visible: true } })).response.status, 409);
-  const threeQuarterParams = new URLSearchParams({ angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive' });
+  const threeQuarterParams = new URLSearchParams({ angle: 'three_quarter', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive', watermarkFreeConfirmed: 'true' });
   const threeQuarter = await fetch(`${base}/api/admin/wheels/${variantId}/reference?${threeQuarterParams}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: transparentPng,
   });

@@ -101,6 +101,23 @@
 .catalogMessage { margin:14px 0; color:var(--text-3); font-size:12px; text-align:center; }
 .catalogMessage.error { color:#ff9b88; }
 .loadMoreWheels { width:100%; margin-top:10px; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text-2); cursor:pointer; }
+.advancedMode { flex:none; border-bottom:1px solid var(--line); }
+.advancedMode>summary { padding:9px 20px; color:var(--text-3); font-size:10px; font-weight:700; letter-spacing:.04em; cursor:pointer; }
+.advancedMode .aiCommand { border-top:1px solid var(--line); border-bottom:0; }
+.filterPills { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.filterPills::-webkit-scrollbar { display:none; }
+.filterPills button,.zoneGrid button { flex:none; padding:8px 11px; border:1px solid var(--line); border-radius:9px; background:var(--bg-2); color:var(--text-2); font:650 10px/1 Manrope,sans-serif; text-transform:capitalize; cursor:pointer; }
+.filterPills button.active,.zoneGrid button.active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+.catalogSwatches { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+.catalogSwatch { min-width:0; padding:7px; border:1px solid var(--line); border-radius:11px; background:var(--bg-2); color:var(--text); text-align:left; cursor:pointer; }
+.catalogSwatch>span { display:block; aspect-ratio:1.65; margin-bottom:7px; border:1px solid rgba(255,255,255,.09); border-radius:7px; box-shadow:inset 0 0 16px rgba(255,255,255,.08); }
+.catalogSwatch strong,.catalogSwatch small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.catalogSwatch strong { font-size:10.5px; }
+.catalogSwatch small { margin-top:3px; color:var(--text-3); font-size:9px; }
+.catalogSwatch.active { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+.zoneGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.zoneGrid button { white-space:normal; line-height:1.25; }
+.legalHint { margin:12px 0 0; padding:10px; border:1px solid var(--line); border-radius:9px; color:var(--text-3); font-size:9.5px; line-height:1.5; }
 
 .configFoot { padding:16px 20px 20px; border-top:1px solid var(--line); }
 .generateHint { display:flex; align-items:center; gap:6px; margin:0 0 12px; color:var(--text-3); font-size:11.5px; }
