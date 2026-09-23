@@ -227,12 +227,12 @@ export default function ConfiguratorPage() {
     }
   }
 
-  async function authenticateAndGenerate({ mode, name, email, password }) {
+  async function authenticateAndGenerate({ mode, name, email, password, inviteCode }) {
     setIsGenerating(true);
     setAuthError('');
     try {
       const auth = await apiRequest(`/api/auth/${mode === 'register' ? 'register' : 'login'}`, {
-        method: 'POST', body: { email, password, ...(mode === 'register' ? { name } : {}) },
+        method: 'POST', body: { email, password, ...(mode === 'register' ? { name, ...(inviteCode ? { inviteCode } : {}) } : {}) },
       });
       setToken(auth.token);
       await runMockGeneration(auth.token);

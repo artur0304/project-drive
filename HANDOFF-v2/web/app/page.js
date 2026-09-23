@@ -66,6 +66,21 @@ function CarDrawing({ body, wheel, tint }) {
 export default function HomePage() {
   const [progress, setProgress] = useState(0);
   const [signedIn, setSignedIn] = useState(false);
+  const [waitEmail, setWaitEmail] = useState('');
+  const [waitMsg, setWaitMsg] = useState(null);
+
+  async function joinWaitlist(event) {
+    event.preventDefault();
+    const email = waitEmail.trim();
+    if (!email) return;
+    try {
+      const result = await apiRequest('/api/waitlist', { method: 'POST', token: '', body: { email } });
+      setWaitMsg(result.duplicate ? "You're already on the list — we'll be in touch." : "Thanks — you're on the waitlist. We'll send an invite code.");
+      setWaitEmail('');
+    } catch (error) {
+      setWaitMsg(error.message || 'Could not join the waitlist. Try again.');
+    }
+  }
   const car = useMemo(() => stateAt(progress), [progress]);
 
   useEffect(() => {
@@ -107,6 +122,15 @@ export default function HomePage() {
       </div></section>
       <section className="landingStory"><div><p className="sectionLabel">THE IDEA</p><h2>Decide on the build before the first piece changes.</h2><p>Upload one clear photo of your own car. Explore a <strong>wrap colour</strong>, <strong>window tint</strong> and <strong>wheels</strong> as one coherent direction. Keep the versions that feel right in your garage.</p></div></section>
       <section className="landingSteps"><div><p>01</p><h3>Upload</h3><span>One exterior photo of your car.</span></div><div><p>02</p><h3>Configure</h3><span>Choose the visual changes.</span></div><div><p>03</p><h3>Compare</h3><span>Review and save each version.</span></div></section>
+      <section className="landingWaitlist">
+        <p className="sectionLabel">CLOSED BETA</p><h2>Want early access?</h2>
+        <p>Leave your email and we&apos;ll send you an invite code to try it on your own car.</p>
+        <form className="waitlistForm" onSubmit={joinWaitlist}>
+          <input type="email" required value={waitEmail} onChange={(event) => setWaitEmail(event.target.value)} placeholder="you@example.com" aria-label="Email for early access" />
+          <button type="submit">Request access</button>
+        </form>
+        {waitMsg && <p className="waitlistMsg" role="status">{waitMsg}</p>}
+      </section>
       <section className="landingClose"><p className="sectionLabel">PROJECT DRIVE</p><h2>See the build <em>on your car</em>, then decide.</h2><a href="/upload">Upload your car</a></section>
       <footer className="landingFooter"><span>Project Drive</span><span>Local preview · AI generation disabled</span></footer>
     </main>

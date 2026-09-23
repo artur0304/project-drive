@@ -9,10 +9,11 @@ export default function AuthGate({ busy, error, onClose, onSubmit }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
 
   function submit(event) {
     event.preventDefault();
-    onSubmit({ mode, name: name.trim(), email: email.trim(), password });
+    onSubmit({ mode, name: name.trim(), email: email.trim(), password, inviteCode: inviteCode.trim() });
   }
 
   return (
@@ -39,6 +40,7 @@ export default function AuthGate({ busy, error, onClose, onSubmit }) {
               {mode === 'register' && <label>Name <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Your name" /></label>}
               <label>Email <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" /></label>
               <label>Password <input type="password" required minLength={6} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'register' ? 'new-password' : 'current-password'} placeholder="At least 6 characters" /></label>
+              {mode === 'register' && <label>Invite code <small>(optional)</small> <input value={inviteCode} maxLength={32} onChange={(event) => setInviteCode(event.target.value)} placeholder="BETA-XYZ" /></label>}
               {error && <p className="authError" role="alert">{error}</p>}
               <button className="authSubmit" type="submit">{mode === 'register' ? 'Create account and continue' : 'Sign in and continue'}</button>
             </form>

@@ -13,3 +13,22 @@
 .landingClose{padding:16vh 28px 20vh;text-align:center}.landingClose h2{max-width:850px;margin:auto}.landingClose a{display:inline-block;margin-top:34px;padding:14px 26px;border-radius:9px;background:var(--landing-accent);color:#180a06;font-weight:800;text-decoration:none}.landingFooter{display:flex;justify-content:space-between;padding:25px 28px 34px;border-top:1px solid var(--landing-line);color:#626a76;font-size:11px}
 @media(max-width:640px){.landingNav{padding:15px 17px}.landingNav>div>a:first-child{display:none}.landingRail{display:none}.landingHeadline{top:18%}.landingCar{width:110vw}.landingFloor{bottom:25%;width:84%}.landingCaption{bottom:17%}.landingHeroCta{bottom:23%}.landingSteps{grid-template-columns:1fr}.landingSteps>div+div{margin-left:0}.landingStory{padding-left:20px;padding-right:20px}.landingFooter{flex-direction:column;gap:7px}}
 @media(prefers-reduced-motion:reduce){.landingHero{height:auto}.landingPin{position:relative;height:100vh}}
+
+/* Лист ожидания закрытой беты на лендинге */
+.landingWaitlist {
+  padding: 80px 24px; text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+}
+.landingWaitlist h2 { font-size: clamp(28px, 4vw, 44px); margin: 0; }
+.landingWaitlist p { color: #8B93A0; max-width: 520px; }
+.waitlistForm { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+.waitlistForm input {
+  flex: 1 1 260px; min-width: 220px; padding: 14px 16px; border-radius: 14px;
+  border: 1px solid #242A33; background: #12151B; color: #F1EEE8; font-size: 16px;
+}
+.waitlistForm input:focus { outline: none; border-color: #E5533B; }
+.waitlistForm button {
+  padding: 14px 26px; border-radius: 14px; border: none; cursor: pointer;
+  background: #E5533B; color: #fff; font-weight: 600; font-size: 16px;
+}
+.waitlistMsg { color: #7CD08F; margin-top: 6px; }
