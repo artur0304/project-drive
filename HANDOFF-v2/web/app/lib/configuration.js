@@ -15,13 +15,21 @@ export function operationsFromDraft(draft) {
   return operations;
 }
 
+// Сколько проходов AI потребует набор операций. Правило зеркалит серверный
+// planGeneration: простые правки (плёнка/тонировка/цвет дисков) идут одним
+// проходом; замена модели дисков по фото — отдельным проходом, но только если
+// вместе с ней выбрано что-то ещё.
+export function passesForOperations(operations = []) {
+  const hasWheelReplace = operations.some((operation) => operation.kind === 'wheel_replace');
+  const appearance = operations.filter((operation) => operation.kind !== 'wheel_replace');
+  if (hasWheelReplace && appearance.length) return 2;
+  return operations.length ? 1 : 0;
+}
+
+// Стоимость в кредитах = число проходов × цена прохода (с сервера, обычно 1).
 export function costFromPricing(operations, pricing) {
-  if (!pricing) return 0;
-  return operations.reduce((sum, operation) => {
-    const price = pricing[operation.kind];
-    if (!Number.isFinite(price)) throw new Error(`Missing server price for ${operation.kind}`);
-    return sum + price;
-  }, 0);
+  const perPass = Number.isFinite(pricing?.creditsPerPass) ? pricing.creditsPerPass : 1;
+  return passesForOperations(operations) * perPass;
 }
 
 export function draftFromOperations(operations = []) {

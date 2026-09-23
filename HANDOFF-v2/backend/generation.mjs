@@ -1,6 +1,6 @@
 // ============================================================================
 
-import { planGeneration } from './generation-planner.mjs';
+import { planGeneration, CREDITS_PER_PASS } from './generation-planner.mjs';
 import { createHash } from 'node:crypto';
 import { buildPrompt, PROMPT_VERSION } from './prompt-builder.mjs';
 import { createFalProvider } from './fal-provider.mjs';
@@ -16,10 +16,16 @@ import { createFalProvider } from './fal-provider.mjs';
 // mockGenerate() на вызов этого слоя — интерфейс (что на входе/выходе) тот же.
 // ============================================================================
 
-// Цены операций в кредитах. УСЛОВНЫЕ — реальные поставим после теста генерации.
+// МОДЕЛЬ ЦЕН (решение Артура 23.09.2026): 1 кредит = 1 проход AI.
+// Простые правки (плёнка, тонировка, цвет дисков) идут одним проходом = 1 кредит.
+// Замена модели дисков по фото каталога — отдельный проход = ещё 1 кредит.
 // ВАЖНО: цена считается ЗДЕСЬ, на сервере. Клиент присылает только ЧТО менять,
 // а сколько это стоит — решает сервер (иначе можно было бы обмануть цену).
-export const PRICE = { wrap: 25, tint: 10, wheel_replace: 20, wheel_recolor: 10 };
+export const PRICING_VERSION = 2;
+export { CREDITS_PER_PASS };
+
+// Допустимые виды операций (раньше проверялись по ключам PRICE).
+const OPERATION_KINDS = new Set(['wrap', 'tint', 'wheel_replace', 'wheel_recolor']);
 
 function cleanText(value, maxLength) {
   const text = typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
@@ -41,7 +47,7 @@ export function validateOperations(operations) {
       return { ok: false, error: 'операция имеет неверный формат' };
 
     const kind = raw.kind;
-    if (!Object.hasOwn(PRICE, kind)) return { ok: false, error: `неизвестная операция: ${kind || ''}` };
+    if (!OPERATION_KINDS.has(kind)) return { ok: false, error: `неизвестная операция: ${kind || ''}` };
     const group = kind.startsWith('wheel_') ? 'wheel' : kind;
     if (groups.has(group)) return { ok: false, error: `операция ${group} указана повторно` };
     groups.add(group);
@@ -78,15 +84,14 @@ export function validateOperations(operations) {
   return { ok: true, operations: normalized };
 }
 
-// Посчитать стоимость набора операций.
+// Посчитать стоимость набора операций В КРЕДИТАХ = число проходов AI.
+// Планировщик решает, что уходит в один проход, а что во второй (замена дисков),
+// поэтому цена = сумма кредитов по шагам плана. Единый источник истины — planner.
 export function costOf(operations) {
-  let total = 0;
   for (const op of operations) {
-    const p = PRICE[op.kind];
-    if (p == null) throw new Error('неизвестная операция: ' + op.kind);
-    total += p;
+    if (!OPERATION_KINDS.has(op.kind)) throw new Error('неизвестная операция: ' + op.kind);
   }
-  return total;
+  return planGeneration(operations).reduce((sum, step) => sum + step.credits, 0);
 }
 
 // --- Провайдер-заглушка (mock). Имитирует AI: задержка, изредка "сбой". ---
@@ -190,7 +195,7 @@ async function generateForProjectUnlocked({
     refunded += safeAmount;
   }
 
-  const plan = planGeneration(resolvedOperations, PRICE);
+  const plan = planGeneration(resolvedOperations);
   const selectedProvider = provider || (mode === 'live' ? createFalProvider({ db }) : runMockProvider);
   let currentImage = asset.url;
   let completedCredits = 0;
@@ -230,7 +235,7 @@ async function generateForProjectUnlocked({
         const versionId = db.createVersion({
           projectId, config: completedOperations.map(publicOperation), outputUrl: currentImage, creditsCharged: completedCredits,
           status: 'partial', warning: 'Часть изменений не выполнена; кредиты за неё возвращены.', plannedCredits: cost,
-          promptVersion: PROMPT_VERSION, internalCostUsd,
+          promptVersion: PROMPT_VERSION, pricingVersion: PRICING_VERSION, internalCostUsd,
         });
         return {
           ok: true, partial: true, versionId, outputUrl: currentImage,
@@ -252,7 +257,7 @@ async function generateForProjectUnlocked({
   try {
     versionId = db.createVersion({
       projectId, config: resolvedOperations.map(publicOperation), outputUrl: currentImage, creditsCharged: cost,
-      status: 'complete', plannedCredits: cost, cacheKey, promptVersion: PROMPT_VERSION, internalCostUsd,
+      status: 'complete', plannedCredits: cost, cacheKey, promptVersion: PROMPT_VERSION, pricingVersion: PRICING_VERSION, internalCostUsd,
     });
   } catch {
     refund(cost, 'refund:save_failed');

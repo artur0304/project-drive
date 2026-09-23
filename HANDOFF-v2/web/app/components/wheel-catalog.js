@@ -8,7 +8,7 @@ const ROW_HEIGHT = 238;
 const VIEWPORT_HEIGHT = 470;
 const PAGE_SIZE = 48;
 
-function WheelCard({ wheel, selected, favorite, generationCost, onSelect, onFavorite }) {
+function WheelCard({ wheel, selected, favorite, onSelect, onFavorite }) {
   return <article className={selected ? 'catalogWheel active' : 'catalogWheel'}>
     <button className="favoriteButton" type="button" aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'} aria-pressed={favorite} onClick={(event) => { event.stopPropagation(); onFavorite(wheel); }}>{favorite ? '♥' : '♡'}</button>
     <button className="wheelMain" type="button" onClick={() => onSelect(wheel)}>
@@ -19,11 +19,11 @@ function WheelCard({ wheel, selected, favorite, generationCost, onSelect, onFavo
       <strong>{wheel.model}</strong>
       <small>{wheel.size_label} · {wheel.color} · {wheel.finish}</small>
     </button>
-    <div className="wheelCardFoot"><span>{generationCost} credits</span><button type="button" onClick={() => onSelect(wheel)}>Try on</button></div>
+    <div className="wheelCardFoot"><span className="wheelCardHint">Adds a wheel pass</span><button type="button" onClick={() => onSelect(wheel)}>Try on</button></div>
   </article>;
 }
 
-export default function WheelCatalog({ draft, onSelect, generationCost = 20 }) {
+export default function WheelCatalog({ draft, onSelect }) {
   const viewportRef = useRef(null);
   const [mode, setMode] = useState('popular');
   const [query, setQuery] = useState('');
@@ -117,7 +117,7 @@ export default function WheelCatalog({ draft, onSelect, generationCost = 20 }) {
     <div ref={viewportRef} className="virtualWheelViewport" onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
       <div className="virtualWheelSpace" style={{ height: rows.length * ROW_HEIGHT }}>
         {rows.slice(start, end).map((row, offset) => <div className="virtualWheelRow" key={row[0]?.id} style={{ transform: `translateY(${(start + offset) * ROW_HEIGHT}px)` }}>
-          {row.map((wheel) => <WheelCard key={wheel.id} wheel={wheel} selected={draft.wheel?.variantId === wheel.id} favorite={favorites.has(wheel.id)} generationCost={generationCost} onSelect={choose} onFavorite={toggleFavorite} />)}
+          {row.map((wheel) => <WheelCard key={wheel.id} wheel={wheel} selected={draft.wheel?.variantId === wheel.id} favorite={favorites.has(wheel.id)} onSelect={choose} onFavorite={toggleFavorite} />)}
         </div>)}
       </div>
     </div>

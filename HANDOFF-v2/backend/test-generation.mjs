@@ -5,13 +5,17 @@ process.env.PROJECT_DRIVE_DB_PATH = ':memory:';
 import assert from 'node:assert/strict';
 
 const db = await import('./db.mjs');
-const { PRICE, costOf, generateForProject, validateOperations } = await import('./generation.mjs');
+const { costOf, generateForProject, validateOperations } = await import('./generation.mjs');
 
 const user = db.createUser({ email: 'generation-test@example.com', name: 'Test' });
 const project = db.createProject({ userId: user.id, name: 'Test car' });
 db.addSourceAsset({ projectId: project.id, url: '/uploads/test.jpg' });
 
-assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }]), PRICE.wrap + PRICE.tint);
+// Новая модель: 1 кредит = 1 проход AI, не зависит от числа простых правок.
+assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }]), 1, 'две простые правки = 1 кредит');
+assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_recolor' }]), 1, 'три простые правки = 1 кредит');
+assert.equal(costOf([{ kind: 'wheel_replace' }]), 1, 'только замена дисков = 1 кредит');
+assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_replace' }]), 2, 'простые + замена дисков = 2 кредита (2 прохода)');
 assert.throws(() => costOf([{ kind: 'unknown' }]), /неизвестная операция/);
 assert.equal(validateOperations([{ kind: 'wrap', color: 'Green', finish: 'Satin' }]).ok, true);
 
@@ -75,8 +79,8 @@ const succeeded = await generateForProject({
   operations: [{ kind: 'wrap', color: 'Green', finish: 'Satin' }],
 });
 assert.equal(succeeded.ok, true);
-assert.equal(succeeded.creditsCharged, PRICE.wrap);
-assert.equal(db.getWallet(user.id).balance, beforeFailure - PRICE.wrap);
+assert.equal(succeeded.creditsCharged, 1, 'одна плёнка = 1 кредит');
+assert.equal(db.getWallet(user.id).balance, beforeFailure - 1);
 assert.equal(db.listVersions(project.id).length, 1);
 
 console.log('✅ Цена, отказ при нехватке, возврат и успешное списание проверены.');

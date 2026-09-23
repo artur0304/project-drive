@@ -33,7 +33,7 @@ try {
   const blocked = await json(`/api/admin/wheels/${variantId}`, { method: 'PATCH', token, body: { visible: true } });
   assert.equal(blocked.response.status, 409);
 
-  const transparentPng = await sharp({ create: { width: 64, height: 64, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  const transparentPng = new Uint8Array(await sharp({ create: { width: 64, height: 64, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer());
   const params = new URLSearchParams({ angle: 'front', rightsSource: 'Own studio', rightsBasis: 'Photographed by Project Drive', watermarkFreeConfirmed: 'true' });
   const uploaded = await fetch(`${base}/api/admin/wheels/${variantId}/reference?${params}`, {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'image/png' }, body: transparentPng,

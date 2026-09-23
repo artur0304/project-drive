@@ -88,7 +88,7 @@ export default function ConfiguratorPage() {
 
   useEffect(() => {
     apiRequest('/api/pricing', { token: '' })
-      .then((data) => setPricing(data.operations))
+      .then((data) => setPricing(data))
       .catch(() => setPricing(null));
     apiRequest('/api/catalog/customization', { token: '' })
       .then(setCatalog)
@@ -103,11 +103,11 @@ export default function ConfiguratorPage() {
 
   const operations = useMemo(() => {
     const result = [];
-    if (draft.wrap) result.push({ key: 'wrap', label: `${draft.wrap.color} · ${draft.wrap.finish}`, cost: pricing?.wrap ?? 0 });
-    if (draft.tint) result.push({ key: 'tint', label: `${draft.tint.name} · ${draft.tint.zone}`, cost: pricing?.tint ?? 0 });
-    if (draft.wheel) result.push({ key: 'wheel', label: draft.wheel.label, cost: pricing?.[draft.wheel.kind] ?? 0 });
+    if (draft.wrap) result.push({ key: 'wrap', label: `${draft.wrap.color} · ${draft.wrap.finish}` });
+    if (draft.tint) result.push({ key: 'tint', label: `${draft.tint.name} · ${draft.tint.zone}` });
+    if (draft.wheel) result.push({ key: 'wheel', label: draft.wheel.label });
     return result;
-  }, [draft, pricing]);
+  }, [draft]);
 
   const apiOperations = useMemo(() => operationsFromDraft(draft), [draft]);
   const total = costFromPricing(apiOperations, pricing);
@@ -292,7 +292,7 @@ export default function ConfiguratorPage() {
           {!catalog && activeTab !== 'wheels' && <p className="catalogMessage">Loading catalog…</p>}
           {catalog && activeTab === 'wrap' && <WrapTab draft={draft} catalog={catalog} family={wrapFamily} onFamily={setWrapFamily} onSelect={selectWrap} />}
           {catalog && activeTab === 'tint' && <TintTab draft={draft} catalog={catalog} onZone={selectTintZone} onLevel={selectTintLevel} />}
-          {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} generationCost={pricing?.wheel_replace ?? 20} />}
+          {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} />}
           {catalog && activeTab === 'wcolor' && <WheelColorTab draft={draft} options={catalog.wheelColors} onSelect={selectWheelColor} />}
         </div>
 

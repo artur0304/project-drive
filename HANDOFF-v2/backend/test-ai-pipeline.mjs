@@ -14,7 +14,7 @@ import { createFalProvider, FAL_MODEL } from './fal-provider.mjs';
 import { buildPrompt, FIDELITY_CLAUSE_V1, PROMPT_VERSION } from './prompt-builder.mjs';
 
 const db = await import('./db.mjs');
-const { generateForProject, PRICE } = await import('./generation.mjs');
+const { generateForProject, CREDITS_PER_PASS } = await import('./generation.mjs');
 const catalog = db.getCustomizationCatalog();
 assert.ok(catalog.wrapOptions.length >= 40 && catalog.wrapOptions.length <= 60);
 assert.equal(catalog.tintLevels.length, 6);
@@ -41,7 +41,7 @@ assert.equal(second.cached, true);
 assert.equal(second.versionId, first.versionId);
 assert.equal(second.creditsCharged, 0);
 assert.equal(providerCalls, 1);
-assert.equal(db.getWallet(user.id).balance, 100 - PRICE.wrap);
+assert.equal(db.getWallet(user.id).balance, 100 - CREDITS_PER_PASS); // 1 проход = 1 кредит
 
 // Пустой внутренний кошелёк не должен сжигать часовой лимит: fal при таком
 // запросе вообще не вызывается. После шести отказов пользователь пополняет
@@ -103,7 +103,7 @@ try {
     async subscribe(model, request) { calls.push(['subscribe', model, request.input]); return { data: { images: [{ url: 'https://fal.test/output.png' }] } }; },
   };
   const liveGuard = new SpendGuard({ ledgerPath: join(temp, 'live-ledger.json'), lifetimeBudgetUsd: 1, dailyBudgetUsd: 1 });
-  const falProvider = createFalProvider({ falClient: fakeFal, guard: liveGuard, fetchImpl: async () => new Response(output, { status: 200 }) });
+  const falProvider = createFalProvider({ falClient: fakeFal, guard: liveGuard, fetchImpl: async () => new Response(new Uint8Array(output), { status: 200 }) });
   const generated = await falProvider({ sourceImage: `/uploads/${sourceName}`, prompt: 'Edit safely.' });
   assert.equal(generated.ok, true);
   assert.equal(calls[1][1], FAL_MODEL);

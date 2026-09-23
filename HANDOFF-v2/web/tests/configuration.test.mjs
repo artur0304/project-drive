@@ -1,18 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  costFromPricing, draftFromOperations, operationsFromDraft,
+  costFromPricing, draftFromOperations, operationsFromDraft, passesForOperations,
 } from '../app/lib/configuration.js';
 
-test('конфигуратор создаёт операции и считает сумму по серверному прайсу', () => {
+test('конфигуратор создаёт операции и считает цену по числу проходов AI', () => {
   const draft = {
     wrap: { color: 'Racing Green', finish: 'Satin' },
     tint: { name: 'Medium', level: '35' },
     wheel: { kind: 'wheel_replace', name: 'BBS CH-R', color: '#8B8D92', label: 'BBS CH-R' },
   };
   const operations = operationsFromDraft(draft);
-  const pricing = { wrap: 25, tint: 10, wheel_replace: 20, wheel_recolor: 10 };
-  assert.equal(costFromPricing(operations, pricing), 55);
+  const pricing = { creditsPerPass: 1 };
+  // Плёнка + тонировка идут одним проходом, замена дисков — вторым: 2 кредита.
+  assert.equal(costFromPricing(operations, pricing), 2);
   assert.deepEqual(draftFromOperations(operations), {
     wrap: { color: 'Racing Green', finish: 'Satin' },
     tint: { name: 'Medium', level: '35' },
@@ -20,11 +21,19 @@ test('конфигуратор создаёт операции и считает
   });
 });
 
-test('неизвестная цена не превращается в тихий ноль', () => {
-  assert.throws(
-    () => costFromPricing([{ kind: 'future_operation' }], { wrap: 25 }),
-    /Missing server price/,
-  );
+test('число проходов: простые правки — один проход, замена дисков — отдельный', () => {
+  assert.equal(passesForOperations([]), 0);
+  assert.equal(passesForOperations([{ kind: 'wrap' }]), 1);
+  assert.equal(passesForOperations([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_recolor' }]), 1);
+  assert.equal(passesForOperations([{ kind: 'wheel_replace' }]), 1);
+  assert.equal(passesForOperations([{ kind: 'wrap' }, { kind: 'wheel_replace' }]), 2);
+});
+
+test('без данных о цене используется 1 кредит за проход', () => {
+  // Если сервер ещё не ответил, считаем по умолчанию 1 кредит за проход,
+  // а число проходов берём из состава операций.
+  assert.equal(costFromPricing([{ kind: 'wrap' }], null), 1);
+  assert.equal(costFromPricing([{ kind: 'wrap' }, { kind: 'wheel_replace' }], undefined), 2);
 });
 
 test('catalog ids уходят на сервер вместо свободного текста', () => {

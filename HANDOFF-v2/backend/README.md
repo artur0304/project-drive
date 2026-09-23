@@ -41,7 +41,7 @@
 ## Что уже умеет API
 Публичные:
 - `GET  /api/health` — сервер жив
-- `GET  /api/pricing` — единый серверный прайс операций
+- `GET  /api/pricing` — модель цен `{ creditsPerPass, pricingVersion, rule }`; 1 кредит = 1 проход AI
 - `GET  /api/wheels` — каталог с `q`, `brand`, `kind`, `diameter`, `finish`, `color`, `cursor`, `limit`
 - `POST /api/auth/register` `{email,password,name}` — регистрация (пароль хранится отпечатком)
 - `POST /api/auth/login` `{email,password}` — вход, возвращает "пропуск" (token)
@@ -66,7 +66,7 @@
 - `POST /api/webhook/payment` `{orderId}` — локальный каркас webhook; по умолчанию
   скрыт за `404`, а в mock-режиме дополнительно отвергает не-loopback запросы
 - `GET /api/catalog/customization` — активные каталоги плёнки, тонировки и цветов дисков без внутренних prompt-фрагментов
-- `POST /api/generate` `{projectId, operations}` — сгенерировать вариант: сервер считает цену,
+- `POST /api/generate` `{projectId, operations}` — сгенерировать вариант: сервер считает цену (1 кредит = 1 проход AI: все простые правки = 1, замена дисков по фото = ещё 1),
   списывает кредиты, в `mock` использует заглушку, а в явно включённом `live` вызывает fal.ai;
   при сбое или практически неизменившемся результате кредиты возвращаются
 

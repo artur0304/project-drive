@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import * as db from './db.mjs';
 import * as auth from './auth.mjs';   // вход/регистрация
-import { PRICE, generateForProject } from './generation.mjs';  // "мозг" генерации (пока с заглушкой AI)
+import { CREDITS_PER_PASS, PRICING_VERSION, generateForProject } from './generation.mjs';  // "мозг" генерации
 import { normalizeUploadedImage, validateVehiclePhoto, VehiclePhotoValidationError } from './image-normalizer.mjs';
 import { validateWheelReference } from './wheel-reference.mjs';
 import { createRequestContext, writeErrorLog } from './observability.mjs';
@@ -219,7 +219,9 @@ export const server = createServer(async (req, res) => {
     // Единственный публичный источник цен операций. Клиент показывает эти
     // значения, но при генерации сервер всё равно пересчитывает сумму сам.
     if (method === 'GET' && path === '/api/pricing') {
-      return send(res, 200, { operations: PRICE });
+      // Новая модель: 1 кредит = 1 проход AI. Клиент считает число проходов
+      // по этому правилу; per-операционных цен больше нет.
+      return send(res, 200, { creditsPerPass: CREDITS_PER_PASS, pricingVersion: PRICING_VERSION, rule: 'one_credit_per_pass' });
     }
     if (method === 'GET' && path === '/api/catalog/customization') {
       return send(res, 200, db.getCustomizationCatalog());
