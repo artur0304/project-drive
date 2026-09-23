@@ -395,6 +395,7 @@ export const server = createServer(async (req, res) => {
         plannedCredits: version.planned_credits,
         generationStatus: version.status,
         warning: version.warning,
+        internalCostUsd: Number(version.internal_cost_usd || 0),
         createdAt: version.created_at,
       });
     }

@@ -43,6 +43,48 @@ assert.equal(second.creditsCharged, 0);
 assert.equal(providerCalls, 1);
 assert.equal(db.getWallet(user.id).balance, 100 - PRICE.wrap);
 
+// Пустой внутренний кошелёк не должен сжигать часовой лимит: fal при таком
+// запросе вообще не вызывается. После шести отказов пользователь пополняет
+// демо-баланс и всё ещё может выполнить первую настоящую попытку.
+process.env.PROJECT_DRIVE_AI_MODE = 'live';
+const noCreditUser = db.createUser({ email: 'no-credit-rate-limit@example.com' });
+const noCreditProject = db.createProject({ userId: noCreditUser.id, name: 'No credit car' });
+db.addSourceAsset({ projectId: noCreditProject.id, url: '/uploads/no-credit.jpg', contentSha256: 'no-credit-photo' });
+for (let index = 0; index < 6; index += 1) {
+  const rejected = await generateForProject({
+    db, userId: noCreditUser.id, projectId: noCreditProject.id,
+    operations: [operation], ipHash: 'no-credit-ip', provider,
+  });
+  assert.equal(rejected.code, 402);
+}
+db.addCredits({ userId: noCreditUser.id, amount: 100, reason: 'test' });
+const afterTopUp = await generateForProject({
+  db, userId: noCreditUser.id, projectId: noCreditProject.id,
+  operations: [operation], ipHash: 'no-credit-ip', provider,
+});
+assert.equal(afterTopUp.ok, true, 'отказы при нулевом балансе не должны исчерпывать часовой лимит');
+
+// Два запроса для одного проекта не могут выполняться одновременно. Второй
+// получает 409 до списания кредитов и до второго вызова провайдера.
+const lockedProject = db.createProject({ userId: noCreditUser.id, name: 'Locked car' });
+db.addSourceAsset({ projectId: lockedProject.id, url: '/uploads/locked.jpg', contentSha256: 'locked-photo' });
+let finishProvider;
+const waitingProvider = ({ sourceImage }) => new Promise((resolve) => {
+  finishProvider = () => resolve({ ok: true, outputImage: `${sourceImage}.edited`, costUsd: 0.08 });
+});
+const firstPending = generateForProject({
+  db, userId: noCreditUser.id, projectId: lockedProject.id,
+  operations: [operation], ipHash: 'lock-ip', provider: waitingProvider,
+});
+const duplicate = await generateForProject({
+  db, userId: noCreditUser.id, projectId: lockedProject.id,
+  operations: [operation], ipHash: 'lock-ip', provider: waitingProvider,
+});
+assert.equal(duplicate.code, 409);
+finishProvider();
+assert.equal((await firstPending).ok, true);
+process.env.PROJECT_DRIVE_AI_MODE = 'mock';
+
 const temp = mkdtempSync(join(tmpdir(), 'project-drive-guard-'));
 try {
   const guard = new SpendGuard({ ledgerPath: join(temp, 'ledger.json'), lifetimeBudgetUsd: 0.16, dailyBudgetUsd: 0.08 });

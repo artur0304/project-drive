@@ -27,6 +27,9 @@ const INITIAL_DRAFT = {
 export default function ConfiguratorPage() {
   const router = useRouter();
   const stageRef = useRef(null);
+  // React меняет disabled после перерисовки. Ref закрывает короткое окно, когда
+  // два быстрых клика могли отправить два одинаковых запроса до перерисовки.
+  const generationLockRef = useRef(false);
   const [activeTab, setActiveTab] = useState('wrap');
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [pendingPhoto, setPendingPhoto] = useState(null);
@@ -175,6 +178,8 @@ export default function ConfiguratorPage() {
   }
 
   async function runMockGeneration(token) {
+    if (generationLockRef.current) return;
+    generationLockRef.current = true;
     setIsGenerating(true);
     setShowAuthGate(true);
     setAuthError('');
@@ -188,7 +193,6 @@ export default function ConfiguratorPage() {
       });
       router.push(`/result/${encodeURIComponent(result.versionId)}`);
     } catch (error) {
-      setIsGenerating(false);
       if (error.status === 401) {
         clearToken();
         setAuthError('Your session expired. Please sign in again.');
@@ -196,6 +200,9 @@ export default function ConfiguratorPage() {
         setShowAuthGate(false);
         setGenerationError(error.message || 'Could not prepare the result.');
       }
+    } finally {
+      generationLockRef.current = false;
+      setIsGenerating(false);
     }
   }
 

@@ -141,10 +141,12 @@ export default function ResultView({ versionId }) {
       <section className="compareStage" aria-label="Before and after comparison">
         {/* Mock возвращает исходный файл, поэтому обе стороны сейчас одинаковые. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="beforeImage" src={result.sourceUrl} alt="Original car" />
-        <div className="afterLayer" style={{ clipPath: `inset(0 ${100 - compare}% 0 0)` }}>
+        {/* Итог лежит фоном справа, а исходник перекрывает левую часть. Так
+            подписи BEFORE/AFTER совпадают с тем, что человек видит. */}
+        <img className="afterImage" src={result.outputUrl} alt="Generated car variation" />
+        <div className="beforeLayer" style={{ clipPath: `inset(0 ${100 - compare}% 0 0)` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={result.outputUrl} alt="Generated car variation" />
+          <img src={result.sourceUrl} alt="Original car" />
         </div>
         <span className="beforeLabel">BEFORE</span><span className="afterLabel">AFTER</span>
         <div className="compareLine" style={{ left: `${compare}%` }}><span /></div>
@@ -167,7 +169,7 @@ export default function ResultView({ versionId }) {
       <section className="resultMeta">
         {operationRows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
         <div><span>COST</span><strong>{result.creditsCharged} demo credits</strong></div>
-        <div><span>ENGINE</span><strong>Local mock — $0</strong></div>
+        <div><span>ENGINE</span><strong>{result.internalCostUsd > 0 ? `fal · Nano Banana 2 — $${result.internalCostUsd.toFixed(2)}` : 'Local mock — $0'}</strong></div>
       </section>
     </main>
   );

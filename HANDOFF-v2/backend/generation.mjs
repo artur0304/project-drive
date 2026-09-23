@@ -124,6 +124,11 @@ function publicOperation(operation) {
   return safe;
 }
 
+// Защищает проект от двух одновременных нажатий Generate. React блокирует
+// кнопку визуально, но два очень быстрых клика могут прийти на сервер раньше,
+// чем браузер успеет перерисовать кнопку. Сервер обязан быть последней защитой.
+const activeProjectGenerations = new Set();
+
 // ============================================================================
 // Главная функция: выполнить генерацию для проекта.
 // Порядок (это важно для денег):
@@ -132,7 +137,7 @@ function publicOperation(operation) {
 //   3) вызвать AI (заглушку)
 //   4) успех -> сохранить версию;  провал -> ВЕРНУТЬ кредиты (не берём за брак)
 // ============================================================================
-export async function generateForProject({
+async function generateForProjectUnlocked({
   db, userId, projectId, operations, forceFail = false, provider = null, ipHash = 'local', requestId = null,
 }) {
   const validation = validateOperations(operations);
@@ -160,12 +165,18 @@ export async function generateForProject({
   const cached = db.getCachedVersion({ projectId, cacheKey });
   if (cached) return { ok: true, cached: true, versionId: cached.id, outputUrl: cached.output_url, creditsCharged: 0, plan: [] };
 
+  const cost = costOf(resolvedOperations);
+
+  // Отказ из-за пустого внутреннего кошелька не является попыткой AI: до fal
+  // запрос не дойдёт. Поэтому сначала проверяем баланс, и только затем тратим
+  // часовой лимит. Это исправляет блокировку после нескольких кликов при 0 cr.
+  const wallet = db.getWallet(userId);
+  if (!wallet || wallet.balance < cost) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
+
   if (mode === 'live') {
     const limit = Math.max(1, Number(process.env.PROJECT_DRIVE_GENERATIONS_PER_HOUR || 6));
     if (!db.consumeGenerationAttempt({ userId, ipHash, limit })) return { ok: false, code: 429, error: 'лимит генераций исчерпан; попробуйте через час' };
   }
-
-  const cost = costOf(resolvedOperations);
 
   // 2) списываем кредиты заранее. spendCredits вернёт false, если не хватает.
   const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
@@ -248,4 +259,17 @@ export async function generateForProject({
     return { ok: false, code: 500, error: 'результат не удалось сохранить, кредиты возвращены' };
   }
   return { ok: true, versionId, creditsCharged: cost, outputUrl: currentImage, internalCostUsd, plan: plan.map((step) => step.id) };
+}
+
+export async function generateForProject(args) {
+  const projectId = String(args?.projectId || '');
+  if (activeProjectGenerations.has(projectId)) {
+    return { ok: false, code: 409, error: 'для этого проекта уже выполняется генерация; дождитесь результата' };
+  }
+  activeProjectGenerations.add(projectId);
+  try {
+    return await generateForProjectUnlocked(args);
+  } finally {
+    activeProjectGenerations.delete(projectId);
+  }
 }
