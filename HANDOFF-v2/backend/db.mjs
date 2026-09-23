@@ -726,3 +726,86 @@ export function markOrderPaid(orderId) {
 }
 
 export default db;
+
+// ===========================================================================
+// ИНВАЙТ-КОДЫ И ЛИСТ ОЖИДАНИЯ (закрытая бета).
+// Вместо оплаты Артур раздаёт коды на N генераций. Один код = max_uses активаций,
+// один пользователь может активировать конкретный код только один раз.
+// ===========================================================================
+
+// Маленький помощник: бросить ошибку с HTTP-кодом, чтобы сервер отдал его клиенту.
+function httpError(message, statusCode) {
+  return Object.assign(new Error(message), { statusCode });
+}
+
+// Создать инвайт-код (только из админки).
+export function createInviteCode({ code, credits, maxUses = 1, note = null, createdBy = null }) {
+  const clean = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9-]{4,32}$/.test(clean)) throw httpError('код: 4–32 символа A–Z, 0–9, дефис', 400);
+  const c = Math.floor(Number(credits));
+  if (!Number.isFinite(c) || c <= 0 || c > 1000) throw httpError('кредиты: от 1 до 1000', 400);
+  const uses = Math.floor(Number(maxUses));
+  if (!Number.isFinite(uses) || uses <= 0 || uses > 100000) throw httpError('использований: от 1 до 100000', 400);
+  if (db.prepare('SELECT code FROM invite_codes WHERE code = ?').get(clean)) throw httpError('такой код уже существует', 409);
+  db.prepare(`INSERT INTO invite_codes (code, credits, max_uses, used_count, note, active, created_by, created_at)
+    VALUES (?, ?, ?, 0, ?, 1, ?, ?)`)
+    .run(clean, c, uses, note ? String(note).slice(0, 200) : null, createdBy, now());
+  return getInviteCode(clean);
+}
+
+export function getInviteCode(code) {
+  return db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(String(code || '').trim().toUpperCase()) ?? null;
+}
+
+export function listInviteCodes() {
+  return db.prepare('SELECT * FROM invite_codes ORDER BY created_at DESC').all();
+}
+
+export function setInviteActive({ code, active }) {
+  const clean = String(code || '').trim().toUpperCase();
+  db.prepare('UPDATE invite_codes SET active = ? WHERE code = ?').run(active ? 1 : 0, clean);
+  return getInviteCode(clean);
+}
+
+// Активировать код. ВСЁ в одной транзакции: проверка, отметка использования,
+// защита от повторной активации тем же пользователем и НАЧИСЛЕНИЕ кредитов —
+// либо целиком, либо ничего. Возвращает { ok, credits, balance } или { ok:false, reason }.
+export function redeemInviteCode({ userId, code }) {
+  const clean = String(code || '').trim().toUpperCase();
+  if (!clean) return { ok: false, reason: 'empty' };
+  db.exec('BEGIN');
+  try {
+    const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(clean);
+    if (!invite || !invite.active) { db.exec('ROLLBACK'); return { ok: false, reason: 'not_found' }; }
+    if (invite.used_count >= invite.max_uses) { db.exec('ROLLBACK'); return { ok: false, reason: 'exhausted' }; }
+    if (db.prepare('SELECT 1 FROM invite_redemptions WHERE code = ? AND user_id = ?').get(clean, userId)) {
+      db.exec('ROLLBACK'); return { ok: false, reason: 'already_redeemed' };
+    }
+    db.prepare('UPDATE invite_codes SET used_count = used_count + 1 WHERE code = ?').run(clean);
+    db.prepare('INSERT INTO invite_redemptions (code, user_id, redeemed_at, credits) VALUES (?, ?, ?, ?)')
+      .run(clean, userId, now(), invite.credits);
+    db.prepare('UPDATE credit_wallets SET balance = balance + ? WHERE user_id = ?').run(invite.credits, userId);
+    logTx(userId, invite.credits, 'invite:' + clean);
+    db.exec('COMMIT');
+    return { ok: true, credits: invite.credits, balance: getWallet(userId).balance };
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+}
+
+// --- Лист ожидания ---
+export function addWaitlistEmail({ email, note = null }) {
+  const clean = String(email || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean) || clean.length > 200) throw httpError('нужен корректный email', 400);
+  if (db.prepare('SELECT email FROM waitlist WHERE email = ?').get(clean)) return { email: clean, duplicate: true };
+  db.prepare('INSERT INTO waitlist (email, status, note, created_at) VALUES (?, ?, ?, ?)')
+    .run(clean, 'pending', note ? String(note).slice(0, 200) : null, now());
+  return { email: clean, duplicate: false };
+}
+
+export function listWaitlist() {
+  return db.prepare('SELECT * FROM waitlist ORDER BY created_at DESC').all();
+}
+
+export function markWaitlistInvited({ email, code }) {
+  db.prepare("UPDATE waitlist SET status = 'invited', invited_code = ? WHERE email = ?")
+    .run(code, String(email || '').trim().toLowerCase());
+}

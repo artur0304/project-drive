@@ -13,12 +13,40 @@ function labelForReason(reason) {
   if (reason === 'local_seed') return 'Manual local test credit';
   if (reason?.startsWith('refund')) return 'Returned after failed mock';
   if (reason?.startsWith('purchase')) return 'Credit package';
+  if (reason?.startsWith('invite')) return 'Invite code';
   return reason?.replaceAll('_', ' ') || 'Balance change';
 }
 
 export default function CreditsPage() {
   const router = useRouter();
   const [state, setState] = useState({ status: 'loading', wallet: null, transactions: [], packs: {}, error: '' });
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemMsg, setRedeemMsg] = useState(null);
+  const [redeeming, setRedeeming] = useState(false);
+
+  async function redeemInvite(event) {
+    event.preventDefault();
+    const code = redeemCode.trim();
+    if (!code) return;
+    setRedeeming(true);
+    setRedeemMsg(null);
+    try {
+      const token = getToken();
+      const result = await apiRequest('/api/invites/redeem', { method: 'POST', token, body: { code } });
+      setRedeemMsg({ ok: true, text: `+${result.credits} generations added.` });
+      setRedeemCode('');
+      // Обновляем баланс и историю, чтобы человек сразу увидел начисление.
+      const [wallet, transactions] = await Promise.all([
+        apiRequest('/api/wallet', { token }),
+        apiRequest('/api/wallet/transactions', { token }),
+      ]);
+      setState((current) => ({ ...current, wallet, transactions }));
+    } catch (error) {
+      setRedeemMsg({ ok: false, text: error.message || 'Code not accepted.' });
+    } finally {
+      setRedeeming(false);
+    }
+  }
 
   useEffect(() => {
     const token = getToken();
@@ -54,6 +82,15 @@ export default function CreditsPage() {
       <section className="creditHero">
         <div><p>LOCAL WALLET</p><h1>{state.wallet.balance}</h1><span>demo credits available</span></div>
         <div className="mockNotice"><strong>No real payment is connected</strong><span>Prices and checkout stay locked until the AI bake-off establishes the real cost per successful render.</span></div>
+      </section>
+
+      <section className="creditSection redeemSection">
+        <header><div><p>INVITE CODE</p><h2>Have a beta code?</h2></div><span>Adds generations</span></header>
+        <form className="redeemForm" onSubmit={redeemInvite}>
+          <input value={redeemCode} onChange={(event) => setRedeemCode(event.target.value)} placeholder="e.g. BETA-XYZ" maxLength={32} aria-label="Invite code" />
+          <button type="submit" disabled={redeeming || !redeemCode.trim()}>{redeeming ? 'Adding…' : 'Redeem'}</button>
+        </form>
+        {redeemMsg && <p className={redeemMsg.ok ? 'redeemOk' : 'redeemError'} role="status">{redeemMsg.text}</p>}
       </section>
 
       <section className="creditSection">

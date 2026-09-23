@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [wheel, setWheel] = useState(EMPTY_WHEEL);
   const [reference, setReference] = useState({ variantId: '', file: null, angle: 'front', rightsSource: '', rightsBasis: '', watermarkFreeConfirmed: false });
   const [credit, setCredit] = useState({ userId: '', delta: '', reason: '' });
+  const [invite, setInvite] = useState({ code: '', credits: '5', maxUses: '1', note: '' });
   const [message, setMessage] = useState('');
   const token = getToken();
 
@@ -71,6 +72,26 @@ export default function AdminPage() {
     } catch (error) { setMessage(error.message); }
   }
 
+  async function createInvite(event) {
+    event.preventDefault();
+    try {
+      const created = await apiRequest('/api/admin/invites', { method: 'POST', token, body: {
+        code: invite.code, credits: Number(invite.credits), maxUses: Number(invite.maxUses), note: invite.note,
+      } });
+      setInvite({ code: '', credits: '5', maxUses: '1', note: '' });
+      setMessage(`Invite code ${created.code} created (${created.credits} generations, ${created.max_uses} uses).`);
+      await refresh();
+    } catch (error) { setMessage(error.message); }
+  }
+
+  async function inviteFromWaitlist(email) {
+    try {
+      const created = await apiRequest('/api/admin/waitlist/invite', { method: 'POST', token, body: { email, credits: 5 } });
+      setMessage(`Code ${created.code} created for ${email}. Send it to them.`);
+      await refresh();
+    } catch (error) { setMessage(error.message); }
+  }
+
   return <main className="adminPage">
     <header><div><p>Project Drive</p><h1>Catalog admin</h1></div><a href="/configurator">Back to configurator</a></header>
     {message && <p className="adminMessage">{message}</p>}
@@ -98,6 +119,19 @@ export default function AdminPage() {
         <section className="adminCard"><h2>Product activity</h2><p>Local aggregate for the last {data.productAnalytics.days} days. No external tracker is used.</p>{data.productAnalytics.totals.length ? data.productAnalytics.totals.map((item) => <div className="metricRow" key={item.event_name}><span>{eventLabel(item.event_name)}</span><strong>{item.count}</strong></div>) : <p>No events yet.</p>}</section>
         <section className="adminCard adminWide"><h2>Recent product events</h2>{data.productAnalytics.recent.length ? data.productAnalytics.recent.map((item, index) => <div className="productEventRow" key={`${item.created_at}-${index}`}><time>{new Date(item.created_at).toLocaleString()}</time><strong>{eventLabel(item.event_name)}</strong><span>{item.project_id ? `project ${item.project_id.slice(0, 8)}…` : 'no project'}</span></div>) : <p>No events yet.</p>}</section>
         <section className="adminCard adminWide"><h2>Audit log</h2>{data.audit.slice(0, 20).map((item) => <div className="auditRow" key={item.id}><time>{new Date(item.created_at).toLocaleString()}</time><strong>{item.action}</strong><span>{item.entity_type} {item.entity_id || ''}</span></div>)}</section>
+        <section className="adminCard"><h2>Invite codes</h2><p>Give beta testers generations without payment. Each person can redeem a code once.</p>
+          <form onSubmit={createInvite} className="adminForm">
+            <label>Code<input required value={invite.code} maxLength={32} placeholder="BETA-CLUB" onChange={(event) => setInvite((current) => ({ ...current, code: event.target.value }))} /></label>
+            <label>Generations<input required type="number" min="1" value={invite.credits} onChange={(event) => setInvite((current) => ({ ...current, credits: event.target.value }))} /></label>
+            <label>Max uses<input required type="number" min="1" value={invite.maxUses} onChange={(event) => setInvite((current) => ({ ...current, maxUses: event.target.value }))} /></label>
+            <label>Note<input value={invite.note} maxLength={200} placeholder="car enthusiasts chat" onChange={(event) => setInvite((current) => ({ ...current, note: event.target.value }))} /></label>
+            <button type="submit">Create code</button>
+          </form>
+          <div className="adminTable"><table><thead><tr><th>Code</th><th>Gen</th><th>Used</th><th>Note</th></tr></thead><tbody>{(data.invites || []).map((row) => <tr key={row.code}><td>{row.code}{!row.active && <small> (off)</small>}</td><td>{row.credits}</td><td>{row.used_count}/{row.max_uses}</td><td>{row.note || ''}</td></tr>)}</tbody></table></div>
+        </section>
+        <section className="adminCard"><h2>Waitlist</h2><p>People who asked for access from the landing page. One click creates a personal code.</p>
+          {(data.waitlist || []).length ? <div className="adminTable"><table><thead><tr><th>Email</th><th>Status</th><th></th></tr></thead><tbody>{data.waitlist.map((row) => <tr key={row.email}><td>{row.email}</td><td>{row.status}{row.invited_code ? ` · ${row.invited_code}` : ''}</td><td>{row.status === 'pending' && <button type="button" onClick={() => inviteFromWaitlist(row.email)}>Invite</button>}</td></tr>)}</tbody></table></div> : <p>No requests yet.</p>}
+        </section>
       </div>
     </>}
   </main>;

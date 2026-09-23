@@ -278,6 +278,7 @@ export const server = createServer(async (req, res) => {
         return send(res, 200, {
           wheels: db.listAdminWheels(), aiJobs: db.listAiJobs(), audit: db.listAuditLog(), users: db.listUsers(),
           productAnalytics: db.getProductAnalytics(),
+          invites: db.listInviteCodes(), waitlist: db.listWaitlist(),
         });
       }
       if (method === 'POST' && path === '/api/admin/wheels') {
@@ -323,6 +324,35 @@ export const server = createServer(async (req, res) => {
         const cleanReason = String(reason || '').trim().slice(0, 250);
         if (!cleanReason) return send(res, 400, { error: 'укажи причину корректировки' });
         return send(res, 200, db.adjustCreditsByAdmin({ userId, delta: Number(delta), reason: cleanReason, actorUserId: user.id }));
+      }
+
+      // --- Инвайт-коды (закрытая бета): раздаём генерации без оплаты ---
+      if (method === 'POST' && path === '/api/admin/invites') {
+        const { code, credits, maxUses, note } = await readBody(req);
+        try { return send(res, 201, db.createInviteCode({ code, credits, maxUses, note, createdBy: user.id })); }
+        catch (e) { return send(res, e.statusCode || 400, { error: e.message }); }
+      }
+      if (method === 'GET' && path === '/api/admin/invites') {
+        return send(res, 200, { invites: db.listInviteCodes() });
+      }
+      const inviteToggle = path.match(/^\/api\/admin\/invites\/([^/]+)$/);
+      if (method === 'PATCH' && inviteToggle) {
+        const { active } = await readBody(req);
+        return send(res, 200, db.setInviteActive({ code: decodeURIComponent(inviteToggle[1]), active: Boolean(active) }));
+      }
+
+      // --- Лист ожидания: смотрим заявки и одним кликом создаём код-приглашение ---
+      if (method === 'GET' && path === '/api/admin/waitlist') {
+        return send(res, 200, { waitlist: db.listWaitlist() });
+      }
+      if (method === 'POST' && path === '/api/admin/waitlist/invite') {
+        const { email, credits, note } = await readBody(req);
+        try {
+          const code = 'BETA-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+          const invite = db.createInviteCode({ code, credits: Number(credits) || 5, maxUses: 1, note: note || `waitlist ${email || ''}`.slice(0, 200), createdBy: user.id });
+          if (email) db.markWaitlistInvited({ email, code: invite.code });
+          return send(res, 201, invite);
+        } catch (e) { return send(res, e.statusCode || 400, { error: e.message }); }
       }
     }
 
@@ -460,9 +490,33 @@ export const server = createServer(async (req, res) => {
     }
     // --- вход / регистрация ---
     if (method === 'POST' && path === '/api/auth/register') {
-      const { email, password, name } = await readBody(req);
-      try { return send(res, 201, auth.register({ email, password, name })); }
+      const { email, password, name, inviteCode } = await readBody(req);
+      let account;
+      try { account = auth.register({ email, password, name }); }
       catch (e) { return send(res, 400, { error: e.message }); }
+      // Необязательный инвайт-код: если передан и валиден — сразу начисляем генерации.
+      let invite = null;
+      if (inviteCode) {
+        const redeemed = db.redeemInviteCode({ userId: account.user.id, code: inviteCode });
+        invite = redeemed.ok ? { ok: true, credits: redeemed.credits } : { ok: false, reason: redeemed.reason };
+      }
+      return send(res, 201, { ...account, invite });
+    }
+    // --- Активировать инвайт-код уже вошедшим пользователем ---
+    if (method === 'POST' && path === '/api/invites/redeem') {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const { code } = await readBody(req);
+      const result = db.redeemInviteCode({ userId: user.id, code });
+      if (result.ok) return send(res, 200, result);
+      const messages = { empty: 'введите код', not_found: 'код не найден или выключен', exhausted: 'код уже исчерпан', already_redeemed: 'вы уже активировали этот код' };
+      return send(res, 400, { error: messages[result.reason] || 'код не принят', reason: result.reason });
+    }
+    // --- Публичная запись в лист ожидания (без входа) ---
+    if (method === 'POST' && path === '/api/waitlist') {
+      const { email, note } = await readBody(req);
+      try { return send(res, 201, db.addWaitlistEmail({ email, note })); }
+      catch (e) { return send(res, e.statusCode || 400, { error: e.message }); }
     }
     if (method === 'POST' && path === '/api/auth/login') {
       const { email, password } = await readBody(req);
