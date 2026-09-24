@@ -20,7 +20,10 @@ function mimeFor(path) {
   return extname(path).toLowerCase() === '.png' ? 'image/png' : extname(path).toLowerCase() === '.webp' ? 'image/webp' : 'image/jpeg';
 }
 
-export function createFalProvider({ falClient = fal, guard = new SpendGuard(), fetchImpl = fetch, db = null } = {}) {
+export function createFalProvider({
+  falClient = fal, guard = new SpendGuard(), fetchImpl = fetch, db = null,
+  timeoutMs = Number(process.env.PROJECT_DRIVE_FAL_TIMEOUT_MS || 90_000),
+} = {}) {
   if (process.env.FAL_KEY) falClient.config({ credentials: process.env.FAL_KEY });
   async function upload(url, reference = null) {
     if (reference?.fal_url) return reference.fal_url;
@@ -40,9 +43,16 @@ export function createFalProvider({ falClient = fal, guard = new SpendGuard(), f
       const imageUrls = [await upload(sourceImage)];
       if (referenceImage) imageUrls.push(await upload(referenceImage, reference));
       submitted = true;
-      const response = await falClient.subscribe(FAL_MODEL, {
+      let timeoutId;
+      const providerCall = falClient.subscribe(FAL_MODEL, {
         input: { prompt, image_urls: imageUrls, aspect_ratio: 'auto', resolution: '1K', num_images: 1, output_format: 'png', limit_generations: true, enable_web_search: false },
       });
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('fal_timeout')), Math.max(1, timeoutMs));
+      });
+      let response;
+      try { response = await Promise.race([providerCall, timeout]); }
+      finally { clearTimeout(timeoutId); }
       const outputUrl = response?.data?.images?.[0]?.url;
       if (!outputUrl) throw new Error('fal_empty_result');
       const download = await fetchImpl(outputUrl);
@@ -60,7 +70,7 @@ export function createFalProvider({ falClient = fal, guard = new SpendGuard(), f
       if (reservation) submitted ? guard.settle(reservation, FAL_1K_COST_USD) : guard.release(reservation);
       return {
         ok: false,
-        error: ['result_unchanged','lifetime_budget_exceeded','daily_budget_exceeded','fal_key_missing'].includes(error.message) ? error.message : 'provider_error',
+        error: ['result_unchanged','lifetime_budget_exceeded','daily_budget_exceeded','fal_key_missing','fal_timeout'].includes(error.message) ? error.message : 'provider_error',
         costUsd: submitted ? FAL_1K_COST_USD : 0, provider: 'fal', model: FAL_MODEL,
       };
     }

@@ -110,6 +110,20 @@ try {
   assert.deepEqual(calls[1][2].image_urls, [`https://fal.test/${sourceName}`]);
   assert.equal(calls[1][2].aspect_ratio, 'auto');
   assert.equal(calls[1][2].resolution, '1K');
+
+  // fal может принять запрос и зависнуть. Клиент получает контролируемый
+  // таймаут, а SpendGuard консервативно считает запрос оплаченным.
+  const timeoutGuard = new SpendGuard({ ledgerPath: join(temp, 'timeout-ledger.json'), lifetimeBudgetUsd: 1, dailyBudgetUsd: 1 });
+  const hangingFal = {
+    config() {},
+    storage: { async upload(file) { return `https://fal.test/${file.name}`; } },
+    subscribe() { return new Promise(() => {}); },
+  };
+  const timeoutProvider = createFalProvider({ falClient: hangingFal, guard: timeoutGuard, timeoutMs: 5 });
+  const timedOut = await timeoutProvider({ sourceImage: `/uploads/${sourceName}`, prompt: 'Edit safely.' });
+  assert.equal(timedOut.ok, false);
+  assert.equal(timedOut.error, 'fal_timeout');
+  assert.equal(timeoutGuard.totals().lifetimeCents, 8, 'после отправки fal расход учитывается даже при таймауте');
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

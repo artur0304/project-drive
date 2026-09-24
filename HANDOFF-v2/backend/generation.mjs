@@ -183,9 +183,14 @@ async function generateForProjectUnlocked({
     if (!db.consumeGenerationAttempt({ userId, ipHash, limit })) return { ok: false, code: 429, error: 'лимит генераций исчерпан; попробуйте через час' };
   }
 
-  // 2) списываем кредиты заранее. spendCredits вернёт false, если не хватает.
-  const paid = db.spendCredits({ userId, amount: cost, reason: 'generate' });
-  if (!paid) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
+  // Списание и pending-job создаются одной транзакцией. Если процесс оборвётся
+  // до ответа провайдера, следующий запуск сервера вернёт зарезервированные кредиты.
+  const reservation = db.beginGenerationJob({ userId, projectId, credits: cost });
+  if (!reservation.ok) return { ok: false, code: 402, error: 'недостаточно кредитов', needed: cost };
+  const generationJobId = reservation.jobId;
+  const finishJob = (status, error = null, versionId = null) => {
+    db.finishGenerationJob({ jobId: generationJobId, status, error, versionId });
+  };
 
   let refunded = 0;
   function refund(amount, reason) {
@@ -229,6 +234,7 @@ async function generateForProjectUnlocked({
           : result.error === 'lifetime_budget_exceeded' || result.error === 'daily_budget_exceeded'
             ? 'лимит расходов AI достигнут; кредиты возвращены'
             : 'генерация не удалась, кредиты возвращены';
+        finishJob('failed', result.error || 'provider_error');
         return { ok: false, code: result.error?.includes('budget_exceeded') ? 503 : 502, error: message, refundedCredits: refunded };
       }
       try {
@@ -237,6 +243,7 @@ async function generateForProjectUnlocked({
           status: 'partial', warning: 'Часть изменений не выполнена; кредиты за неё возвращены.', plannedCredits: cost,
           promptVersion: PROMPT_VERSION, pricingVersion: PRICING_VERSION, internalCostUsd,
         });
+        finishJob('done', null, versionId);
         return {
           ok: true, partial: true, versionId, outputUrl: currentImage,
           creditsCharged: completedCredits, refundedCredits: refunded,
@@ -244,6 +251,7 @@ async function generateForProjectUnlocked({
         };
       } catch {
         refund(completedCredits, 'refund:save_failed');
+        finishJob('failed', 'save_failed');
         return { ok: false, code: 500, error: 'частичный результат не удалось сохранить, все кредиты возвращены', refundedCredits: refunded };
       }
     }
@@ -261,8 +269,10 @@ async function generateForProjectUnlocked({
     });
   } catch {
     refund(cost, 'refund:save_failed');
+    finishJob('failed', 'save_failed');
     return { ok: false, code: 500, error: 'результат не удалось сохранить, кредиты возвращены' };
   }
+  finishJob('done', null, versionId);
   return { ok: true, versionId, creditsCharged: cost, outputUrl: currentImage, internalCostUsd, plan: plan.map((step) => step.id) };
 }
 

@@ -152,6 +152,9 @@
 .generateError { margin:0 0 10px; color:#ff9b88; font-size:11px; line-height:1.4; }
 .generationProgress { display:grid; justify-items:center; padding:16px 0 2px; text-align:center; }
 .generationProgress p { margin-bottom:0!important; }
+.generationProgress p + p { margin-top:4px!important; }
+.generationProgress strong { color:var(--text); }
+.generationProgress small { max-width:330px; color:var(--text-3); font-size:11px; line-height:1.5; }
 .progressSpinner { width:34px; height:34px; border:3px solid var(--line-2); border-top-color:var(--accent); border-radius:50%; animation:config-spin .8s linear infinite; }
 @keyframes config-spin { to { transform:rotate(360deg); } }
 

@@ -46,12 +46,26 @@ for (const indexName of [
   'idx_source_assets_project_created',
   'idx_project_versions_project_created',
   'idx_credit_transactions_user_created',
+  'idx_generation_jobs_status_created',
 ]) {
   assert.equal(
     db.default.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?").get(indexName)?.name,
     indexName,
   );
 }
+
+console.log('9) Восстанавливаем кредит после прерванной генерации ровно один раз…');
+const recoveryUser = db.createUser({ email: 'recovery@example.com' });
+const recoveryProject = db.createProject({ userId: recoveryUser.id, name: 'Recovery car' });
+db.addCredits({ userId: recoveryUser.id, amount: 3, reason: 'test_seed' });
+const pending = db.beginGenerationJob({ userId: recoveryUser.id, projectId: recoveryProject.id, credits: 2 });
+assert.equal(pending.ok, true);
+assert.equal(db.getWallet(recoveryUser.id).balance, 1);
+assert.equal(db.recoverInterruptedGenerationJobs({ olderThanMinutes: -1 }), 1);
+assert.equal(db.getWallet(recoveryUser.id).balance, 3);
+assert.equal(db.getGenerationJob(pending.jobId).status, 'failed');
+assert.equal(db.recoverInterruptedGenerationJobs({ olderThanMinutes: -1 }), 0);
+assert.equal(db.getWallet(recoveryUser.id).balance, 3, 'повторный запуск не должен вернуть кредит дважды');
 db.default.prepare('DELETE FROM users WHERE id = ?').run(user.id);
 assert.equal(db.getProject(project.id), null);
 assert.equal(db.getLatestSourceAsset(project.id), null);

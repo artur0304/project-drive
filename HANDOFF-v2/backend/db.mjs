@@ -368,6 +368,71 @@ export function spendCredits({ userId, amount, reason }) {
   } catch (e) { db.exec('ROLLBACK'); throw e; }
 }
 
+// Atomically reserve the user's credits and persist a pending generation.
+// There is no crash window between these two actions: SQLite commits both or
+// neither. Startup recovery can therefore refund every abandoned reservation.
+export function beginGenerationJob({ userId, projectId, credits }) {
+  if (!Number.isInteger(credits) || credits <= 0) throw new Error('credits должен быть положительным целым числом');
+  const id = randomUUID();
+  const timestamp = now();
+  db.exec('BEGIN');
+  try {
+    const wallet = db.prepare('SELECT balance FROM credit_wallets WHERE user_id = ?').get(userId);
+    if (!wallet || wallet.balance < credits) {
+      db.exec('ROLLBACK');
+      return { ok: false };
+    }
+    db.prepare('UPDATE credit_wallets SET balance = balance - ? WHERE user_id = ?').run(credits, userId);
+    logTx(userId, -credits, `generate:${id}`);
+    db.prepare(`INSERT INTO generation_jobs
+      (id,user_id,project_id,credits_reserved,status,created_at,updated_at)
+      VALUES (?,?,?,?, 'pending', ?,?)`).run(id, userId, projectId, credits, timestamp, timestamp);
+    db.exec('COMMIT');
+    return { ok: true, jobId: id };
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}
+
+export function finishGenerationJob({ jobId, status, error = null, versionId = null }) {
+  if (!['done', 'failed'].includes(status)) throw new Error('неверный статус generation job');
+  const changed = db.prepare(`UPDATE generation_jobs
+    SET status=?, error=?, version_id=?, updated_at=? WHERE id=? AND status='pending'`)
+    .run(status, error, versionId, now(), jobId).changes;
+  return changed === 1;
+}
+
+export function getGenerationJob(jobId) {
+  return db.prepare('SELECT * FROM generation_jobs WHERE id = ?').get(jobId) ?? null;
+}
+
+// Refund only stale pending rows and mark them failed in the same transaction.
+// Re-running this function is safe: completed/recovered rows are never selected.
+export function recoverInterruptedGenerationJobs({ olderThanMinutes = 10 } = {}) {
+  const minutes = Number.isFinite(Number(olderThanMinutes)) ? Number(olderThanMinutes) : 10;
+  const cutoff = new Date(Date.now() - minutes * 60 * 1000).toISOString();
+  const recoveredAt = now();
+  db.exec('BEGIN');
+  try {
+    const pending = db.prepare(`SELECT id,user_id,credits_reserved FROM generation_jobs
+      WHERE status='pending' AND created_at <= ? ORDER BY created_at`).all(cutoff);
+    for (const job of pending) {
+      db.prepare('UPDATE credit_wallets SET balance = balance + ? WHERE user_id = ?')
+        .run(job.credits_reserved, job.user_id);
+      logTx(job.user_id, job.credits_reserved, `refund:interrupted:${job.id}`);
+      db.prepare(`UPDATE generation_jobs SET status='failed', error='server_interrupted',
+        updated_at=?, recovered_at=? WHERE id=? AND status='pending'`)
+        .run(recoveredAt, recoveredAt, job.id);
+    }
+    db.exec('COMMIT');
+    return pending.length;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}
+
 export function listTransactions(userId) {
   return db.prepare('SELECT * FROM credit_transactions WHERE user_id = ? ORDER BY created_at DESC').all(userId);
 }

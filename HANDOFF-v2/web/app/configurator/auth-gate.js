@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 // Auth gate появляется только после Generate. Так гость сначала загружает фото
 // и собирает draft, а регистрация не мешает ему раньше времени.
-export default function AuthGate({ busy, error, onClose, onSubmit }) {
+export default function AuthGate({ busy, generationPasses = 1, error, onClose, onSubmit }) {
   const [mode, setMode] = useState('register');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -26,7 +26,9 @@ export default function AuthGate({ busy, error, onClose, onSubmit }) {
         {busy ? (
           <div className="generationProgress" role="status">
             <span className="progressSpinner" />
-            <p>Your photo and settings are being connected to the local mock generator.</p>
+            <p><strong>Generating your car…</strong></p>
+            <p>{generationPasses === 1 ? '1 AI pass' : `${generationPasses} AI passes`} planned. A pass usually takes 10–90 seconds.</p>
+            <small>Keep this window open. If the server is interrupted, reserved credits are returned automatically.</small>
           </div>
         ) : (
           <>

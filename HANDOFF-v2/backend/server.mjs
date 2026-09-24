@@ -107,6 +107,13 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_FAILURES = 5;
 const loginFailures = new Map();
 
+// A hard process stop can leave a paid request without a response. Stale
+// pending jobs are refunded on startup. This is transactional and idempotent.
+const recoveredGenerationJobs = db.recoverInterruptedGenerationJobs({
+  olderThanMinutes: Number(process.env.PROJECT_DRIVE_PENDING_JOB_RECOVERY_MINUTES || 10),
+});
+if (recoveredGenerationJobs > 0) console.log(`Возвращены кредиты за прерванные генерации: ${recoveredGenerationJobs}`);
+
 function loginKey(req, email) {
   return `${req.socket.remoteAddress || 'unknown'}:${String(email || '').trim().toLowerCase()}`;
 }

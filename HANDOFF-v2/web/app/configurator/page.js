@@ -299,7 +299,7 @@ export default function ConfiguratorPage() {
         <GenerateFooter operations={operations} total={total} pricingReady={Boolean(pricing)} isGenerating={isGenerating} error={generationError} onGenerate={requestGeneration} />
       </aside>
 
-      {showAuthGate && <AuthGate busy={isGenerating} error={authError} onClose={() => setShowAuthGate(false)} onSubmit={authenticateAndGenerate} />}
+      {showAuthGate && <AuthGate busy={isGenerating} generationPasses={Math.max(1, total || 1)} error={authError} onClose={() => setShowAuthGate(false)} onSubmit={authenticateAndGenerate} />}
     </main>
   );
 }

@@ -64,6 +64,14 @@ const providerCrash = await generateForProject({
 assert.equal(providerCrash.code, 502);
 assert.equal(db.getWallet(user.id).balance, beforeFailure, 'после исключения провайдера нужен возврат');
 
+const providerTimeout = await generateForProject({
+  db, userId: user.id, projectId: project.id,
+  operations: [{ kind: 'wrap', color: 'Green', finish: 'Satin' }],
+  provider: async () => ({ ok: false, error: 'fal_timeout', costUsd: 0.08, provider: 'fal' }),
+});
+assert.equal(providerTimeout.code, 502);
+assert.equal(db.getWallet(user.id).balance, beforeFailure, 'после таймаута fal кредит должен вернуться');
+
 const saveCrash = await generateForProject({
   db: { ...db, createVersion: () => { throw new Error('disk full'); } },
   userId: user.id, projectId: project.id,
