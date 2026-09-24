@@ -14,6 +14,7 @@
 - `test-auth.mjs` — самопроверка входа.
 - `test-generation.mjs` — цена, нехватка средств, возврат и успешное списание.
 - `test-image-normalization.mjs` — применение ориентации и удаление метаданных.
+- `test-object-storage.mjs` — единый слой файлов, запрет traversal и read-only каталога.
 - `test-wheel-catalog.mjs` — пагинация, фильтры, избранное, recent и юридический publish-guard.
 - `test-wheel-admin.mjs` — загрузка безопасного reference и публикация через админку.
 - `test-server-security.mjs` — HTTP-проверка закрытых legacy-маршрутов и безопасных имён uploads.

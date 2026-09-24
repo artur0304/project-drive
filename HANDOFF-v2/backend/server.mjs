@@ -21,7 +21,6 @@
 // ============================================================================
 
 import { createServer } from 'node:http';
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
@@ -31,12 +30,12 @@ import { CREDITS_PER_PASS, PRICING_VERSION, generateForProject } from './generat
 import { normalizeUploadedImage, validateVehiclePhoto, VehiclePhotoValidationError } from './image-normalizer.mjs';
 import { validateWheelReference } from './wheel-reference.mjs';
 import { createRequestContext, writeErrorLog } from './observability.mjs';
+import { createLocalObjectStorage } from './object-storage.mjs';
 
 // папка, куда складываем загруженные фото (создаётся сама)
-const UP = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
-if (!existsSync(UP)) mkdirSync(UP, { recursive: true });
-const WHEEL_UP = join(dirname(fileURLToPath(import.meta.url)), 'wheel-uploads');
-if (!existsSync(WHEEL_UP)) mkdirSync(WHEEL_UP, { recursive: true });
+const backendRoot = dirname(fileURLToPath(import.meta.url));
+const objectStorage = createLocalObjectStorage({ backendRoot, wheelCatalogRoot: join(backendRoot, '..', 'web', 'public', 'wheel-catalog') });
+await objectStorage.ensureReady();
 
 // Прочитать "сырое" тело (байты файла), но не больше maxBytes — иначе обрываем.
 function readRaw(req, maxBytes) {
@@ -318,9 +317,9 @@ export const server = createServer(async (req, res) => {
         const image = await validateWheelReference(raw, contentType);
         const ext = contentType === 'image/webp' ? 'webp' : 'png';
         const fileName = `${randomUUID()}.${ext}`;
-        writeFileSync(join(WHEEL_UP, fileName), image.buffer);
+        const storedUrl = await objectStorage.put({ scope: 'wheel-uploads', name: fileName, bytes: image.buffer });
         const saved = db.addWheelReferenceImage({
-          variantId: decodeURIComponent(referenceMatch[1]), url: `/wheel-uploads/${fileName}`,
+          variantId: decodeURIComponent(referenceMatch[1]), url: storedUrl,
           mimeType: contentType, width: image.width, height: image.height, hasAlpha: image.hasAlpha,
           angle, rightsSource, rightsBasis, watermarkFreeConfirmed, actorUserId: user.id,
         });
@@ -586,13 +585,13 @@ export const server = createServer(async (req, res) => {
 
       // После нормализации любой разрешённый вход хранится как JPEG без EXIF/GPS.
       const fname = randomUUID() + '.jpg';
-      writeFileSync(join(UP, fname), buf);
+      const storedUrl = await objectStorage.put({ scope: 'uploads', name: fname, bytes: buf });
       const assetId = db.addSourceAsset({
-        projectId: project.id, url: '/uploads/' + fname,
+        projectId: project.id, url: storedUrl,
         contentSha256: createHash('sha256').update(buf).digest('hex'),
       });
       db.recordProductEvent({ userId: user.id, projectId: project.id, eventName: 'photo_uploaded', details: { width: preflight.width, height: preflight.height, originalBytes } });
-      return send(res, 201, { id: assetId, url: '/uploads/' + fname, bytes: buf.length, originalBytes, normalized: true, preflight });
+      return send(res, 201, { id: assetId, url: storedUrl, bytes: buf.length, originalBytes, normalized: true, preflight });
     }
 
     // --- раздача загруженных файлов (ТОЛЬКО для локальной разработки) ---
@@ -602,27 +601,27 @@ export const server = createServer(async (req, res) => {
     if (uploadMatch) {
       // Сервер сам создаёт имена как UUID.jpg. Строгий шаблон не позволяет
       // использовать этот маршрут для чтения произвольного файла с диска.
-      const f = join(UP, uploadMatch[1]);
-      if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
+      const objectUrl = `/uploads/${uploadMatch[1]}`;
+      if (!await objectStorage.exists(objectUrl)) return send(res, 404, { error: 'файл не найден' });
       res.writeHead(200, {
-        'Content-Type': f.endsWith('.png') ? 'image/png' : 'image/jpeg',
+        'Content-Type': objectUrl.endsWith('.png') ? 'image/png' : 'image/jpeg',
         'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'same-origin',
       });
-      return res.end(readFileSync(f));
+      return res.end(await objectStorage.get(objectUrl));
     }
 
     const wheelUploadMatch = method === 'GET' && path.match(/^\/wheel-uploads\/([0-9a-f-]{36}\.(?:png|webp))$/i);
     if (wheelUploadMatch) {
-      const f = join(WHEEL_UP, wheelUploadMatch[1]);
-      if (!existsSync(f)) return send(res, 404, { error: 'файл не найден' });
+      const objectUrl = `/wheel-uploads/${wheelUploadMatch[1]}`;
+      if (!await objectStorage.exists(objectUrl)) return send(res, 404, { error: 'файл не найден' });
       res.writeHead(200, {
-        'Content-Type': f.endsWith('.webp') ? 'image/webp' : 'image/png',
+        'Content-Type': objectUrl.endsWith('.webp') ? 'image/webp' : 'image/png',
         'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
       });
-      return res.end(readFileSync(f));
+      return res.end(await objectStorage.get(objectUrl));
     }
 
     // --- ПАКЕТЫ КРЕДИТОВ и ОПЛАТА (каркас; провайдер пока заглушка) ---
