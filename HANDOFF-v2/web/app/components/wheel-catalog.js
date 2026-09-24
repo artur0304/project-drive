@@ -104,7 +104,7 @@ export default function WheelCatalog({ draft, onSelect }) {
   return <section className="wheelCatalog" aria-label="Wheel catalog">
     <div className="catalogModes">{[['popular', 'Popular'], ['favorites', 'Favorites'], ['recent', 'Recent']].map(([value, label]) => <button key={value} type="button" className={mode === value ? 'active' : ''} onClick={() => setMode(value)}>{label}</button>)}</div>
     {mode === 'popular' && <>
-      <label className="wheelSearch"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brand or model" /></label>
+      <label className="wheelSearch"><span aria-hidden="true">⌕</span><input aria-label="Search wheels" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brand or model" /></label>
       <div className="filterChips">{chips.map(([key, label, value]) => <button key={`${key}-${value}`} type="button" className={filters[key] === value ? 'active' : ''} onClick={() => setFilters((current) => ({ ...current, [key]: current[key] === value ? '' : value }))}>{label}</button>)}</div>
       <div className="catalogSelects">
         <label>Brand<select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}><option value="">All brands</option>{facets.brands.map((brand) => <option key={brand.slug} value={brand.slug}>{brand.name}</option>)}</select></label>

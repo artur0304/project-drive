@@ -8,7 +8,7 @@ import ProductNav from '../components/product-nav';
 import './credits.css';
 
 function labelForReason(reason) {
-  if (reason === 'generate') return 'Saved mock variation';
+  if (reason === 'generate' || reason?.startsWith('generate:')) return 'AI generation';
   if (reason === 'local_demo_balance') return 'Local demo balance';
   if (reason === 'local_seed') return 'Manual local test credit';
   if (reason?.startsWith('refund')) return 'Returned after failed mock';

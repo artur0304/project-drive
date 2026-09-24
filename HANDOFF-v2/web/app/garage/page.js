@@ -176,7 +176,7 @@ export default function GaragePage() {
                     <button type="submit">Save</button><button type="button" onClick={() => setEditingId('')}>Cancel</button>
                   </form>
                 ) : <h2>{project.name}</h2>}
-                <span>{[project.vehicle_make, project.vehicle_model].filter(Boolean).join(' ') || 'Vehicle not labeled'} · Created {readableDate(project.created_at)} · {project.versions.length} saved versions</span>
+                <span>{[project.vehicle_make, project.vehicle_model].filter(Boolean).join(' ') || 'Vehicle not labeled'} · Created {readableDate(project.created_at)} · {project.versions.length} saved {project.versions.length === 1 ? 'version' : 'versions'}</span>
               </div>
               <div className="projectActions"><button className="renameButton" type="button" onClick={() => beginRename(project)}>Rename</button><button type="button" disabled={openingId === project.id} onClick={() => prepareProject(project, latestDraft)}>{openingId === project.id ? 'Opening…' : 'New variation'}</button></div>
             </header>
