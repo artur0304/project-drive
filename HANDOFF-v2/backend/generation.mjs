@@ -18,10 +18,10 @@ import { createFalProvider } from './fal-provider.mjs';
 
 // МОДЕЛЬ ЦЕН (решение Артура 23.09.2026): 1 кредит = 1 проход AI.
 // Простые правки (плёнка, тонировка, цвет дисков) идут одним проходом = 1 кредит.
-// Замена модели дисков по фото каталога — отдельный проход = ещё 1 кредит.
+// Замена модели дисков по reference-фото идёт в том же проходе.
 // ВАЖНО: цена считается ЗДЕСЬ, на сервере. Клиент присылает только ЧТО менять,
 // а сколько это стоит — решает сервер (иначе можно было бы обмануть цену).
-export const PRICING_VERSION = 2;
+export const PRICING_VERSION = 3;
 export { CREDITS_PER_PASS };
 
 // Допустимые виды операций (раньше проверялись по ключам PRICE).
@@ -73,12 +73,13 @@ export function validateOperations(operations) {
       const color = raw.color == null ? null : cleanText(raw.color, 32);
       const variantId = raw.variantId == null ? null : cleanText(raw.variantId, 100);
       const referenceImage = raw.referenceImage == null ? null : cleanText(raw.referenceImage, 500);
+      const referenceAssetId = raw.referenceAssetId == null ? null : cleanText(raw.referenceAssetId, 100);
       if (kind === 'wheel_recolor' && optionId) { normalized.push({ kind, optionId }); continue; }
       if ((!name && !variantId) || (raw.color != null && !color)) return { ok: false, error: 'неверные параметры дисков' };
       if (referenceImage && !referenceImage.match(/^\/(?:wheel-catalog|wheel-uploads)\/[a-z0-9._-]+$/i)) {
         return { ok: false, error: 'неверная ссылка reference-изображения' };
       }
-      normalized.push({ kind, ...(name ? { name } : {}), ...(color ? { color } : {}), ...(variantId ? { variantId } : {}), ...(referenceImage ? { referenceImage } : {}) });
+      normalized.push({ kind, ...(name ? { name } : {}), ...(color ? { color } : {}), ...(variantId ? { variantId } : {}), ...(referenceAssetId ? { referenceAssetId } : {}), ...(referenceImage ? { referenceImage } : {}) });
     }
   }
   return { ok: true, operations: normalized };
@@ -113,14 +114,14 @@ function cacheKeyFor(asset, operations) {
   const normalized = operations.map((operation) => {
     if (operation.kind === 'wrap' || operation.kind === 'wheel_recolor') return `${operation.kind}:${operation.optionId || `${operation.color}:${operation.finish}`}`;
     if (operation.kind === 'tint') return `tint:${operation.levelId || operation.level}:${operation.zoneId || 'legacy'}`;
-    return `wheel_replace:${operation.variantId || operation.name}`;
+    return `wheel_replace:${operation.variantId || operation.referenceAssetId || operation.name}`;
   }).sort();
   return createHash('sha256').update(JSON.stringify({ source: asset.content_sha256 || asset.id || asset.url, normalized, promptVersion: PROMPT_VERSION })).digest('hex');
 }
 
 function usesCatalogIds(operation) {
   if (operation.kind === 'tint') return Boolean(operation.levelId && operation.zoneId);
-  if (operation.kind === 'wheel_replace') return Boolean(operation.variantId);
+  if (operation.kind === 'wheel_replace') return Boolean(operation.variantId || operation.referenceAssetId);
   return Boolean(operation.optionId);
 }
 
@@ -163,7 +164,7 @@ async function generateForProjectUnlocked({
   }
 
   let resolvedOperations;
-  try { resolvedOperations = db.resolveCatalogOperations(safeOperations); }
+  try { resolvedOperations = db.resolveCatalogOperations(safeOperations, { projectId }); }
   catch (error) { return { ok: false, code: error.statusCode || 400, error: error.message }; }
 
   const cacheKey = cacheKeyFor(asset, resolvedOperations);

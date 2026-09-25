@@ -22,7 +22,7 @@ assert.equal(catalog.tintLevels.length, 6);
 assert.equal(catalog.tintZones.length, 4);
 assert.equal(catalog.wheelColors.length, 8);
 assert.match(buildPrompt([{ promptFragment: 'Change only the paint.' }]), new RegExp(FIDELITY_CLAUSE_V1.slice(0, 30)));
-assert.equal(PROMPT_VERSION, 'catalog-v1-fidelity-v1');
+assert.equal(PROMPT_VERSION, 'catalog-v2-combined-reference-v1');
 
 const user = db.createUser({ email: 'pipeline@example.com' });
 db.addCredits({ userId: user.id, amount: 100, reason: 'test' });

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPendingPhoto } from '../lib/pending-photo';
+import { getPendingPhoto, getPendingWheelReference, savePendingWheelReference } from '../lib/pending-photo';
 import { apiRequest } from '../lib/api';
 import { costFromPricing, operationsFromDraft } from '../lib/configuration';
 import { parseVehicleCommand } from '../lib/command-parser';
@@ -30,10 +30,12 @@ export default function ConfiguratorPage() {
   // React меняет disabled после перерисовки. Ref закрывает короткое окно, когда
   // два быстрых клика могли отправить два одинаковых запроса до перерисовки.
   const generationLockRef = useRef(false);
+  const uploadedWheelReferenceRef = useRef(null);
   const panelBodyRef = useRef(null);
   const [activeTab, setActiveTab] = useState('wrap');
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [pendingPhoto, setPendingPhoto] = useState(null);
+  const [customWheelReference, setCustomWheelReference] = useState(null);
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoName, setPhotoName] = useState('Your car');
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(true);
@@ -72,6 +74,8 @@ export default function ConfiguratorPage() {
         setPhotoUrl(objectUrl);
         setPhotoName(pending.name || 'Your car');
       }
+      const savedWheelReference = await getPendingWheelReference();
+      if (savedWheelReference?.file) setCustomWheelReference(savedWheelReference);
 
       const savedDraft = getDraft();
       if (savedDraft) setDraft(savedDraft);
@@ -137,6 +141,23 @@ export default function ConfiguratorPage() {
       variantId: wheel?.id || null, referenceImage: wheel?.image_url || null,
     } }));
   }
+  async function selectCustomWheel(file) {
+    const reference = { file, name: file.name, type: file.type, size: file.size, savedAt: new Date().toISOString() };
+    await savePendingWheelReference(file);
+    uploadedWheelReferenceRef.current = null;
+    setCustomWheelReference(reference);
+    setDraft((current) => ({ ...current, wheel: {
+      kind: 'wheel_replace', customReference: true, label: 'Your wheel reference',
+      name: 'Custom wheel reference', detail: file.name, color: null,
+    } }));
+  }
+  function useCustomWheel() {
+    if (!customWheelReference?.file) return;
+    setDraft((current) => ({ ...current, wheel: {
+      kind: 'wheel_replace', customReference: true, label: 'Your wheel reference',
+      name: 'Custom wheel reference', detail: customWheelReference.name, color: null,
+    } }));
+  }
   function selectWheelColor(option) {
     setDraft((current) => ({ ...current, wheel: { kind: 'wheel_recolor', optionId: option.id, label: `${option.display_name} wheels`, name: option.display_name, color: option.preview_swatch } }));
   }
@@ -197,9 +218,25 @@ export default function ConfiguratorPage() {
     try {
       const projectId = await getOrCreateProject(token);
       await uploadPhotoOnce(token, projectId);
+      let generationOperations = apiOperations;
+      if (draft.wheel?.customReference) {
+        if (!customWheelReference?.file) throw new Error('Choose the wheel reference photo again.');
+        let uploaded = uploadedWheelReferenceRef.current;
+        if (!uploaded || uploaded.projectId !== projectId || uploaded.savedAt !== customWheelReference.savedAt) {
+          const asset = await apiRequest(`/api/wheel-reference?projectId=${encodeURIComponent(projectId)}`, {
+            method: 'POST', token, body: customWheelReference.file,
+            headers: { 'Content-Type': customWheelReference.type || 'image/jpeg' },
+          });
+          uploaded = { projectId, savedAt: customWheelReference.savedAt, assetId: asset.id };
+          uploadedWheelReferenceRef.current = uploaded;
+        }
+        generationOperations = apiOperations.map((operation) => operation.kind === 'wheel_replace'
+          ? { kind: 'wheel_replace', name: 'Custom wheel reference', referenceAssetId: uploaded.assetId }
+          : operation);
+      }
       const result = await apiRequest('/api/generate', {
         method: 'POST', token,
-        body: { projectId, operations: apiOperations },
+        body: { projectId, operations: generationOperations },
       });
       router.push(`/result/${encodeURIComponent(result.versionId)}`);
     } catch (error) {
@@ -302,7 +339,7 @@ export default function ConfiguratorPage() {
           {!catalog && activeTab !== 'wheels' && <p className="catalogMessage">Loading catalog…</p>}
           {catalog && activeTab === 'wrap' && <WrapTab draft={draft} catalog={catalog} family={wrapFamily} finish={wrapFinish} onFamily={setWrapFamily} onFinish={setWrapFinish} onSelect={selectWrap} />}
           {catalog && activeTab === 'tint' && <TintTab draft={draft} catalog={catalog} onZone={selectTintZone} onLevel={selectTintLevel} />}
-          {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} />}
+          {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} customReference={customWheelReference} onCustomReference={selectCustomWheel} onUseCustomReference={useCustomWheel} />}
           {catalog && activeTab === 'wcolor' && <WheelColorTab draft={draft} options={catalog.wheelColors} onSelect={selectWheelColor} />}
         </div>
 

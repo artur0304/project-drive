@@ -435,5 +435,735 @@
       "downloadedWidth": 1000,
       "downloadedHeight": 1000
     }
+  },
+  {
+    "title": "Race.Rally.Research (R3) 16-inch, 6-spoke alloy rim.jpg",
+    "slug": "r3-16-six-spoke",
+    "brand": "Race Rally Research",
+    "model": "R3 6-spoke",
+    "style": "6_spoke",
+    "color": "White",
+    "finish": "Painted",
+    "sizeLabel": "R16",
+    "diameter": 16,
+    "asset": "/wheel-catalog/commons/r3-16-six-spoke.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Race.Rally.Research (R3) 16-inch, 6-spoke alloy rim.jpg",
+      "description": "Race.Rally.Research (R3) 16-inch, 6-spoke alloy rim.",
+      "artist": "Aero777",
+      "credit": "Own work Previously published: Flickr, Aero7MY",
+      "license": "CC BY-SA 2.5 my",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/my/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ARace.Rally.Research_(R3)_16-inch%2C_6-spoke_alloy_rim.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Race.Rally.Research_%28R3%29_16-inch%2C_6-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Race.Rally.Research_%28R3%29_16-inch%2C_6-spoke_alloy_rim.jpg/1280px-Race.Rally.Research_%28R3%29_16-inch%2C_6-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3068,
+      "height": 2928,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1222
+    }
+  },
+  {
+    "title": "Race.Rally.Research (R3) 15-inch, twin 6-spoke alloy rim.jpg",
+    "slug": "r3-15-twin-six",
+    "brand": "Race Rally Research",
+    "model": "R3 Twin 6-spoke",
+    "style": "twin_6_spoke",
+    "color": "White",
+    "finish": "Painted",
+    "sizeLabel": "R15",
+    "diameter": 15,
+    "asset": "/wheel-catalog/commons/r3-15-twin-six.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Race.Rally.Research (R3) 15-inch, twin 6-spoke alloy rim.jpg",
+      "description": "Race.Rally.Research (R3) 15-inch, twin 6-spoke alloy rim.",
+      "artist": "Aero777",
+      "credit": "Own work Previously published: Flickr, Aero7MY",
+      "license": "CC BY-SA 2.5 my",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/my/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ARace.Rally.Research_(R3)_15-inch%2C_twin_6-spoke_alloy_rim.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Race.Rally.Research_%28R3%29_15-inch%2C_twin_6-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Race.Rally.Research_%28R3%29_15-inch%2C_twin_6-spoke_alloy_rim.jpg/1280px-Race.Rally.Research_%28R3%29_15-inch%2C_twin_6-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2882,
+      "height": 2791,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1240
+    }
+  },
+  {
+    "title": "Race.Rally.Research (R3) 17-inch, 7-spoke alloy rim.jpg",
+    "slug": "r3-17-seven-spoke",
+    "brand": "Race Rally Research",
+    "model": "R3 7-spoke",
+    "style": "7_spoke",
+    "color": "White",
+    "finish": "Painted",
+    "sizeLabel": "R17",
+    "diameter": 17,
+    "asset": "/wheel-catalog/commons/r3-17-seven-spoke.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Race.Rally.Research (R3) 17-inch, 7-spoke alloy rim.jpg",
+      "description": "Race.Rally.Research (R3) 17-inch, 7-spoke alloy rim.",
+      "artist": "Aero777",
+      "credit": "Own work Previously published: Flickr, Aero7MY",
+      "license": "CC BY-SA 2.5 my",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/my/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ARace.Rally.Research_(R3)_17-inch%2C_7-spoke_alloy_rim.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/01/Race.Rally.Research_%28R3%29_17-inch%2C_7-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Race.Rally.Research_%28R3%29_17-inch%2C_7-spoke_alloy_rim.jpg/1280px-Race.Rally.Research_%28R3%29_17-inch%2C_7-spoke_alloy_rim.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2644,
+      "height": 2625,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1271
+    }
+  },
+  {
+    "title": "CalVintage.jpg",
+    "slug": "calibre-vintage",
+    "brand": "Calibre",
+    "model": "Vintage",
+    "style": "5_spoke",
+    "color": "Silver",
+    "finish": "Polished lip",
+    "asset": "/wheel-catalog/commons/calibre-vintage.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "CalVintage.jpg",
+      "description": "Calibre Vintage Alloy Wheel",
+      "artist": "JamesGrayWheelwright",
+      "credit": "Own work",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ACalVintage.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a7/CalVintage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a7/CalVintage.jpg/1280px-CalVintage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 1963,
+      "height": 1909,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1245
+    }
+  },
+  {
+    "title": "CalDub18.jpg",
+    "slug": "calibre-dub-18",
+    "brand": "Calibre",
+    "model": "Dub",
+    "style": "5_spoke",
+    "color": "Chrome",
+    "finish": "Polished",
+    "sizeLabel": "R18",
+    "diameter": 18,
+    "asset": "/wheel-catalog/commons/calibre-dub-18.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "CalDub18.jpg",
+      "description": "The 18\" Calibre Dub Alloy Wheel",
+      "artist": "JamesGrayWheelwright",
+      "credit": "Own work",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ACalDub18.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/CalDub18.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/CalDub18.jpg/1280px-CalDub18.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 1550,
+      "height": 1552,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1282
+    }
+  },
+  {
+    "title": "The tire wheels of Mercedes-AMG vehicles.JPG",
+    "slug": "mercedes-amg-oem-display",
+    "brand": "Mercedes-AMG",
+    "model": "OEM display wheel",
+    "style": "multi_spoke",
+    "color": "Black / silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/mercedes-amg-oem-display.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "The tire wheels of Mercedes-AMG vehicles.JPG",
+      "description": "メルセデス・AMGの車種のホイールを撮影。",
+      "artist": "Tokumeigakarinoaoshima",
+      "credit": "Own work",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AThe_tire_wheels_of_Mercedes-AMG_vehicles.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/66/The_tire_wheels_of_Mercedes-AMG_vehicles.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/The_tire_wheels_of_Mercedes-AMG_vehicles.JPG/1280px-The_tire_wheels_of_Mercedes-AMG_vehicles.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2542,
+      "height": 1896,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 955
+    }
+  },
+  {
+    "title": "Rays F1 Rear Wheel.JPG",
+    "slug": "rays-f1-rear",
+    "brand": "RAYS",
+    "model": "F1 Rear",
+    "style": "motorsport",
+    "color": "Gunmetal",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/rays-f1-rear.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Rays F1 Rear Wheel.JPG",
+      "description": "Rays F1 Rear Wheel supplied to Williams F1 Team",
+      "artist": "Hatsukari715",
+      "credit": "Own work",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ARays_F1_Rear_Wheel.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Rays_F1_Rear_Wheel.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Rays_F1_Rear_Wheel.JPG/1280px-Rays_F1_Rear_Wheel.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 1600,
+      "height": 1200,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 960
+    }
+  },
+  {
+    "title": "Madonna by Fast Wheels.jpg",
+    "slug": "fast-wheels-madonna",
+    "brand": "Fast Wheels",
+    "model": "Madonna",
+    "style": "multi_spoke",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/fast-wheels-madonna.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Madonna by Fast Wheels.jpg",
+      "description": "Alloy wheel style \"Madonna\" by Fast Wheels of Canada.",
+      "artist": "Fast Wheels",
+      "credit": "Wikipedia:Contact us/Photo submission",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AMadonna_by_Fast_Wheels.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Madonna_by_Fast_Wheels.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Madonna_by_Fast_Wheels.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 1000,
+      "height": 1000,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "DEZENTRBBP.jpg",
+    "slug": "dezent-rb",
+    "brand": "DEZENT",
+    "model": "RB",
+    "style": "5_spoke",
+    "color": "Black / silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/dezent-rb.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "DEZENTRBBP.jpg",
+      "description": "Dezent RB Black and Polished",
+      "artist": "JamesGrayWheelwright",
+      "credit": "Own work",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ADEZENTRBBP.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/DEZENTRBBP.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/DEZENTRBBP.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 787,
+      "height": 771,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 787,
+      "downloadedHeight": 771
+    }
+  },
+  {
+    "title": "Bbs cy500.jpg",
+    "slug": "bbs-cy500",
+    "brand": "BBS",
+    "model": "CY500",
+    "style": "5_spoke",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-cy500.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Bbs cy500.jpg",
+      "description": "A BBS CY500 Wheel, for the BBS Wheel Library",
+      "artist": "Hipwell",
+      "credit": "Own work Hipwell Photography",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ABbs_cy500.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Bbs_cy500.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Bbs_cy500.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 908,
+      "height": 767,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 908,
+      "downloadedHeight": 767
+    }
+  },
+  {
+    "title": "Ferrari BBS Foto1.jpg",
+    "slug": "bbs-ferrari-f1",
+    "brand": "BBS",
+    "model": "Ferrari F1 magnesium",
+    "style": "motorsport",
+    "color": "Magnesium",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/bbs-ferrari-f1.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Ferrari BBS Foto1.jpg",
+      "description": "BBS-Ferrari-Formel-1-Magnesium-Felge",
+      "artist": "\"Dieses Bild ist von Urheber und gleichzeitig Freigegeben von Vito Ianniello.\"",
+      "credit": "Transferred from de.wikipedia to Commons by Saibo using CommonsHelper .",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AFerrari_BBS_Foto1.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Ferrari_BBS_Foto1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5e/Ferrari_BBS_Foto1.jpg/1280px-Ferrari_BBS_Foto1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2586,
+      "height": 2670,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1322
+    }
+  },
+  {
+    "title": "Embedded World 2014 BBS-Rennfelge auf Porsche 997 GT3 Cup (04).jpg",
+    "slug": "bbs-997-gt3-cup",
+    "brand": "BBS",
+    "model": "Porsche 997 GT3 Cup race",
+    "style": "motorsport",
+    "color": "Gold",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/bbs-997-gt3-cup.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Embedded World 2014 BBS-Rennfelge auf Porsche 997 GT3 Cup (04).jpg",
+      "description": "Embedded World 2014:BBS Rennfelge auf Porsche 911 GT3 Cup, Typ 997 (1200kg, 450 PS) Einsatz: ADAC 24h-Rennen Nürburgring.",
+      "artist": "Ordercrazy",
+      "credit": "Own work",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEmbedded_World_2014_BBS-Rennfelge_auf_Porsche_997_GT3_Cup_(04).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Embedded_World_2014_BBS-Rennfelge_auf_Porsche_997_GT3_Cup_%2804%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Embedded_World_2014_BBS-Rennfelge_auf_Porsche_997_GT3_Cup_%2804%29.jpg/1280px-Embedded_World_2014_BBS-Rennfelge_auf_Porsche_997_GT3_Cup_%2804%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 4032,
+      "height": 3024,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 960
+    }
+  },
+  {
+    "title": "Porsche 911 GT3 R Hybrid wheel.jpg",
+    "slug": "porsche-gt3-r-hybrid",
+    "brand": "Porsche",
+    "model": "911 GT3 R Hybrid",
+    "style": "motorsport",
+    "color": "Black",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/porsche-gt3-r-hybrid.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Porsche 911 GT3 R Hybrid wheel.jpg",
+      "description": "Porsche 911 GT3 R Hybrid en el Salón de Ginebra 2010.",
+      "artist": "David Villarreal Fernández",
+      "credit": "originally posted to Flickr as Porsche 911 GT3 R Hybrid",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3APorsche_911_GT3_R_Hybrid_wheel.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Porsche_911_GT3_R_Hybrid_wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Porsche_911_GT3_R_Hybrid_wheel.jpg/1280px-Porsche_911_GT3_R_Hybrid_wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2831,
+      "height": 1790,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 809
+    }
+  },
+  {
+    "title": "Jante RC Design.jpg",
+    "slug": "rc-design-exhibit",
+    "brand": "RC Design",
+    "model": "Exhibit wheel",
+    "style": "multi_spoke",
+    "color": "Black / silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/rc-design-exhibit.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Jante RC Design.jpg",
+      "description": "Das Foto der Felge der RC-Felge in Perspektive.",
+      "artist": "Warinhari",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AJante_RC_Design.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Jante_RC_Design.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Jante_RC_Design.jpg/1280px-Jante_RC_Design.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 6016,
+      "height": 4016,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 854
+    }
+  },
+  {
+    "title": "BBS, EMS 2023, Essen (P1160623-RR).jpg",
+    "slug": "bbs-ems-2023-cutaway",
+    "brand": "BBS",
+    "model": "EMS 2023 cutaway",
+    "style": "engineering_cutaway",
+    "color": "Gold",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-cutaway.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "BBS, EMS 2023, Essen (P1160623-RR).jpg",
+      "description": "cutaway of a BBS rim at Essen Motor Show 2023",
+      "artist": "MB-one",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ABBS%2C_EMS_2023%2C_Essen_(P1160623-RR).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8e/BBS%2C_EMS_2023%2C_Essen_%28P1160623-RR%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/BBS%2C_EMS_2023%2C_Essen_%28P1160623-RR%29.jpg/1280px-BBS%2C_EMS_2023%2C_Essen_%28P1160623-RR%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3456,
+      "height": 4608,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1707
+    }
+  },
+  {
+    "title": "EMS 2023, Essen (P1160638).jpg",
+    "slug": "bbs-ems-2023-01",
+    "brand": "BBS",
+    "model": "EMS 2023 exhibit 01",
+    "style": "exhibit",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-01.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "EMS 2023, Essen (P1160638).jpg",
+      "description": "Essen Motor Show 2023",
+      "artist": "Matti Blume",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEMS_2023%2C_Essen_(P1160638).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/84/EMS_2023%2C_Essen_%28P1160638%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/EMS_2023%2C_Essen_%28P1160638%29.jpg/1280px-EMS_2023%2C_Essen_%28P1160638%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3456,
+      "height": 4608,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1707
+    }
+  },
+  {
+    "title": "EMS 2023, Essen (P1160637).jpg",
+    "slug": "bbs-ems-2023-02",
+    "brand": "BBS",
+    "model": "EMS 2023 exhibit 02",
+    "style": "exhibit",
+    "color": "Gold",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-02.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "EMS 2023, Essen (P1160637).jpg",
+      "description": "Essen Motor Show 2023",
+      "artist": "Matti Blume",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEMS_2023%2C_Essen_(P1160637).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1d/EMS_2023%2C_Essen_%28P1160637%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/EMS_2023%2C_Essen_%28P1160637%29.jpg/1280px-EMS_2023%2C_Essen_%28P1160637%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3456,
+      "height": 4608,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1707
+    }
+  },
+  {
+    "title": "EMS 2023, Essen (P1160631).jpg",
+    "slug": "bbs-ems-2023-03",
+    "brand": "BBS",
+    "model": "EMS 2023 exhibit 03",
+    "style": "exhibit",
+    "color": "Black",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-03.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "EMS 2023, Essen (P1160631).jpg",
+      "description": "Essen Motor Show 2023",
+      "artist": "Matti Blume",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEMS_2023%2C_Essen_(P1160631).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/EMS_2023%2C_Essen_%28P1160631%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/EMS_2023%2C_Essen_%28P1160631%29.jpg/1280px-EMS_2023%2C_Essen_%28P1160631%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3456,
+      "height": 4608,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1707
+    }
+  },
+  {
+    "title": "EMS 2023, Essen (P1160624).jpg",
+    "slug": "bbs-ems-2023-04",
+    "brand": "BBS",
+    "model": "EMS 2023 exhibit 04",
+    "style": "exhibit",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-04.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "EMS 2023, Essen (P1160624).jpg",
+      "description": "BBS alloy wheels at Essen Motor Show 2023",
+      "artist": "Matti Blume",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEMS_2023%2C_Essen_(P1160624).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7e/EMS_2023%2C_Essen_%28P1160624%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/EMS_2023%2C_Essen_%28P1160624%29.jpg/1280px-EMS_2023%2C_Essen_%28P1160624%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3456,
+      "height": 4608,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 1707
+    }
+  },
+  {
+    "title": "EMS 2023, Essen (P1160622).jpg",
+    "slug": "bbs-ems-2023-05",
+    "brand": "BBS",
+    "model": "EMS 2023 exhibit 05",
+    "style": "exhibit",
+    "color": "Black / gold",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-ems-2023-05.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "EMS 2023, Essen (P1160622).jpg",
+      "description": "Essen Motor Show 2023",
+      "artist": "Matti Blume",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AEMS_2023%2C_Essen_(P1160622).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0d/EMS_2023%2C_Essen_%28P1160622%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/EMS_2023%2C_Essen_%28P1160622%29.jpg/1280px-EMS_2023%2C_Essen_%28P1160622%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 4608,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires"
+      ],
+      "downloadedWidth": 1280,
+      "downloadedHeight": 960
+    }
   }
 ]

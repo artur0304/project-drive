@@ -18,9 +18,8 @@ const precisePlan = planGeneration([
   { kind: 'wrap', color: 'Green', finish: 'Satin' },
   { kind: 'wheel_replace', name: 'BBS CH-R' },
 ]);
-assert.deepEqual(precisePlan.map((step) => step.id), ['appearance', 'wheel_precision']);
+assert.deepEqual(precisePlan.map((step) => step.id), ['combined']);
 assert.equal(precisePlan[0].credits, 1);
-assert.equal(precisePlan[1].credits, 1);
 
 const user = db.createUser({ email: 'planner@example.com' });
 db.addCredits({ userId: user.id, amount: 100, reason: 'test_seed' });
@@ -28,28 +27,27 @@ const project = db.createProject({ userId: user.id, name: 'Planner car' });
 db.addSourceAsset({ projectId: project.id, url: '/uploads/source.jpg' });
 
 let calls = 0;
-const partial = await generateForProject({
+const combined = await generateForProject({
   db, userId: user.id, projectId: project.id,
   operations: [
     { kind: 'wrap', color: 'Green', finish: 'Satin' },
     { kind: 'wheel_replace', name: 'BBS CH-R' },
   ],
-  provider: async ({ sourceImage }) => {
+  provider: async ({ sourceImage, operations }) => {
     calls += 1;
-    return calls === 1 ? { ok: true, outputImage: `${sourceImage}.appearance` } : { ok: false, error: 'precision_failed' };
+    assert.equal(operations.length, 2);
+    return { ok: true, outputImage: `${sourceImage}.combined` };
   },
 });
-assert.equal(calls, 2);
-assert.equal(partial.ok, true);
-assert.equal(partial.partial, true);
-assert.equal(partial.creditsCharged, 1);
-assert.equal(partial.refundedCredits, 1);
+assert.equal(calls, 1);
+assert.equal(combined.ok, true);
+assert.equal(combined.partial, undefined);
+assert.equal(combined.creditsCharged, 1);
 assert.equal(db.getWallet(user.id).balance, 100 - 1);
-const saved = db.getVersion(partial.versionId);
-assert.deepEqual(JSON.parse(saved.config_json), [{ kind: 'wrap', color: 'Green', finish: 'Satin' }]);
-assert.equal(saved.status, 'partial');
+const saved = db.getVersion(combined.versionId);
+assert.equal(JSON.parse(saved.config_json).length, 2);
+assert.equal(saved.status, 'complete');
 assert.equal(saved.credits_charged, 1);
-assert.equal(saved.planned_credits, 2);
-assert.match(saved.warning, /кредиты/);
+assert.equal(saved.planned_credits, 1);
 
-console.log('✅ Planner объединяет простые правки, отделяет reference-диски и возвращает кредиты за упавший шаг.');
+console.log('✅ Planner объединяет плёнку и reference-диски в один AI-проход за один кредит.');

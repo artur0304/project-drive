@@ -1,7 +1,8 @@
 import { InfoIcon } from './configurator-icons';
 
 // Новая модель цен: показываем ОДНУ цену за всю генерацию, без построчных цен.
-// total — это число проходов AI (1 за все простые правки, +1 за замену дисков).
+// total — число AI-проходов. Машина, reference-диск и остальные изменения
+// отправляются вместе и стоят один кредит.
 export default function GenerateFooter({ operations, total, pricingReady, isGenerating, error, onGenerate }) {
   const creditWord = total === 1 ? 'credit' : 'credits';
   return <footer className="configFoot">
@@ -16,7 +17,6 @@ export default function GenerateFooter({ operations, total, pricingReady, isGene
       <div className="total">Generation <strong>{pricingReady ? total : '—'}</strong> {pricingReady ? creditWord : 'credits'}</div>
       <button className="generateButton" type="button" disabled={!operations.length || !pricingReady || isGenerating} onClick={onGenerate}>{isGenerating ? 'Generating…' : pricingReady ? 'Generate' : 'Loading price…'}</button>
     </div>
-    {total === 2 && <p className="generateSubnote">Wheel model swap is a separate pass (+1 credit).</p>}
-    <p className="generateSubnote generateSubnoteMuted">Change everything at once — one price.</p>
+    <p className="generateSubnote generateSubnoteMuted">Wrap, tint and one wheel reference — one generation.</p>
   </footer>;
 }

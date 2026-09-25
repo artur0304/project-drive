@@ -1,6 +1,6 @@
-// Planner минимизирует число AI-вызовов, но отделяет точную замену дисков:
-// плёнку/тонировку/перекраску выгодно делать одним запросом, а reference-диск
-// последним шагом, чтобы его геометрия не размылась последующей операцией.
+// Один запрос Nano Banana принимает исходное фото и reference диска вместе.
+// Поэтому все выбранные изменения собираются в один проход: пользователь платит
+// за готовый вариант, а не отдельно за плёнку, тонировку и диски.
 //
 // МОДЕЛЬ ЦЕН (решение Артура 23.09.2026): клиент платит за КАЖДЫЙ проход AI,
 // а не за каждое изменение. Себестоимость зависит от числа проходов, а не от
@@ -8,13 +8,6 @@
 export const CREDITS_PER_PASS = 1;
 
 export function planGeneration(operations, creditsPerPass = CREDITS_PER_PASS) {
-  const wheelReplace = operations.find((operation) => operation.kind === 'wheel_replace');
-  const appearance = operations.filter((operation) => operation !== wheelReplace);
-  const groups = wheelReplace && appearance.length ? [appearance, [wheelReplace]] : [operations];
-  return groups.map((stepOperations, index) => ({
-    id: groups.length === 1 ? 'combined' : index === 0 ? 'appearance' : 'wheel_precision',
-    operations: stepOperations,
-    // Каждый проход стоит фиксированно 1 кредит (раньше суммировались цены операций).
-    credits: creditsPerPass,
-  }));
+  if (!Array.isArray(operations) || !operations.length) return [];
+  return [{ id: 'combined', operations, credits: creditsPerPass }];
 }

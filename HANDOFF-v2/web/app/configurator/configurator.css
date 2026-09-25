@@ -69,6 +69,17 @@
 .wheelCard small { margin-top:3px; color:var(--text-3); font-size:11px; }
 
 .wheelCatalog { min-width:0; }
+.customWheelUpload { display:grid; grid-template-columns:72px minmax(0,1fr) auto; align-items:center; gap:12px; margin-bottom:14px; padding:10px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(135deg,#181a20,#111318); }
+.customWheelUpload.active { border-color:var(--accent); box-shadow:inset 0 0 0 1px rgba(237,87,63,.2); }
+.customWheelVisual { display:grid; place-items:center; width:72px; height:72px; overflow:hidden; border:1px solid rgba(255,255,255,.09); border-radius:10px; background:#0b0d11; }
+.customWheelVisual img { width:100%; height:100%; object-fit:cover; }
+.customWheelVisual span { color:var(--accent); font:300 30px/1 Manrope,sans-serif; }
+.customWheelCopy { min-width:0; display:grid; gap:4px; }
+.customWheelCopy>span { color:var(--accent); font-size:8.5px; font-weight:800; letter-spacing:.13em; }
+.customWheelCopy strong { overflow:hidden; color:var(--text); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.customWheelCopy small { color:var(--text-3); font-size:9.5px; line-height:1.4; }
+.customWheelUpload>button { align-self:end; padding:7px 9px; border:1px solid var(--line-2); border-radius:8px; background:var(--panel-2); color:var(--text); font:700 9.5px/1 Manrope,sans-serif; cursor:pointer; }
+.visuallyHiddenFile { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .catalogModes { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:12px; padding:4px; border:1px solid var(--line); border-radius:10px; background:var(--bg-2); }
 .catalogModes button { padding:8px 4px; border:0; border-radius:7px; background:none; color:var(--text-2); font:600 11px/1 Manrope,sans-serif; cursor:pointer; }
 .catalogModes button.active { background:var(--panel-2); color:var(--text); }
@@ -221,7 +232,8 @@
   .sheet-peek .aiCommand { display:none; }
   .sheet-peek .configFoot { margin-top:auto; }
   .panelTop { padding-top:8px; }
-  .panelBody { overscroll-behavior:contain; }
+  .panelBody { overflow-x:hidden; overscroll-behavior:contain; }
+  .filterChips,.wrapFamilyPills,.wrapFinishPills { margin-inline:-14px; padding-inline:14px; }
   .configFoot { padding-top:11px; padding-bottom:13px; }
   .configFoot .generateHint,.configFoot .generateSubnote { display:none; }
   .operationList { gap:4px; margin-bottom:8px; }

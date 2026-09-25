@@ -11,18 +11,13 @@ export function operationsFromDraft(draft) {
     ...(draft.wheel.optionId ? { optionId: draft.wheel.optionId } : {}),
     ...(draft.wheel.variantId ? { variantId: draft.wheel.variantId } : {}),
     ...(draft.wheel.referenceImage ? { referenceImage: draft.wheel.referenceImage } : {}),
+    ...(draft.wheel.referenceAssetId ? { referenceAssetId: draft.wheel.referenceAssetId } : {}),
   });
   return operations;
 }
 
-// Сколько проходов AI потребует набор операций. Правило зеркалит серверный
-// planGeneration: простые правки (плёнка/тонировка/цвет дисков) идут одним
-// проходом; замена модели дисков по фото — отдельным проходом, но только если
-// вместе с ней выбрано что-то ещё.
+// Все изменения и один reference-диск Nano Banana получает одним запросом.
 export function passesForOperations(operations = []) {
-  const hasWheelReplace = operations.some((operation) => operation.kind === 'wheel_replace');
-  const appearance = operations.filter((operation) => operation.kind !== 'wheel_replace');
-  if (hasWheelReplace && appearance.length) return 2;
   return operations.length ? 1 : 0;
 }
 
@@ -50,6 +45,7 @@ export function draftFromOperations(operations = []) {
         color: operation.color,
         ...(operation.variantId ? { variantId: operation.variantId } : {}),
         ...(operation.referenceImage ? { referenceImage: operation.referenceImage } : {}),
+        ...(operation.referenceAssetId ? { referenceAssetId: operation.referenceAssetId } : {}),
         label: operation.kind === 'wheel_recolor' ? `${operation.name} wheels` : operation.name,
       };
     }

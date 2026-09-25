@@ -15,7 +15,7 @@ db.addSourceAsset({ projectId: project.id, url: '/uploads/test.jpg' });
 assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }]), 1, 'две простые правки = 1 кредит');
 assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_recolor' }]), 1, 'три простые правки = 1 кредит');
 assert.equal(costOf([{ kind: 'wheel_replace' }]), 1, 'только замена дисков = 1 кредит');
-assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_replace' }]), 2, 'простые + замена дисков = 2 кредита (2 прохода)');
+assert.equal(costOf([{ kind: 'wrap' }, { kind: 'tint' }, { kind: 'wheel_replace' }]), 1, 'плёнка + тонировка + reference-диск = 1 кредит');
 assert.throws(() => costOf([{ kind: 'unknown' }]), /неизвестная операция/);
 assert.equal(validateOperations([{ kind: 'wrap', color: 'Green', finish: 'Satin' }]).ok, true);
 

@@ -5,6 +5,7 @@ process.env.PROJECT_DRIVE_PORT = '0';
 
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import sharp from 'sharp';
 
 const { server } = await import('./server.mjs');
 if (!server.listening) await once(server, 'listening');
@@ -61,6 +62,29 @@ try {
   });
   assert.equal(registration.status, 201);
   const { token } = await registration.json();
+
+  // Пользовательский reference-диск хранится отдельно от исходного фото машины
+  // и может быть использован только внутри проекта владельца.
+  const projectResponse = await fetch(`${base}/api/projects`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name: 'Reference test car' }),
+  });
+  assert.equal(projectResponse.status, 201);
+  const project = await projectResponse.json();
+  const wheelImage = await sharp({ create: { width: 640, height: 640, channels: 3, background: '#888888' } }).jpeg().toBuffer();
+  const wheelUpload = await fetch(`${base}/api/wheel-reference?projectId=${encodeURIComponent(project.id)}`, {
+    method: 'POST', headers: { 'Content-Type': 'image/jpeg', Authorization: `Bearer ${token}` }, body: wheelImage,
+  });
+  assert.equal(wheelUpload.status, 201);
+  const wheelAsset = await wheelUpload.json();
+  const database = await import('./db.mjs');
+  assert.equal(database.getLatestSourceAsset(project.id), null, 'reference не подменяет исходное фото машины');
+  const resolvedReference = database.resolveCatalogOperations([
+    { kind: 'wheel_replace', name: 'Custom wheel reference', referenceAssetId: wheelAsset.id },
+  ], { projectId: project.id })[0];
+  assert.equal(resolvedReference.referenceImage, wheelAsset.url);
+  assert.match(resolvedReference.promptFragment, /exact wheel design/i);
+
   assert.equal((await fetch(`${base}/api/checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

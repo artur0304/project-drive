@@ -605,6 +605,42 @@ export const server = createServer(async (req, res) => {
       return send(res, 201, { id: assetId, url: storedUrl, bytes: buf.length, originalBytes, normalized: true, preflight });
     }
 
+    // --- reference-фото диска пользователя ---
+    // Храним отдельно от фото машины (type=wheel_reference), чтобы референс
+    // никогда не мог случайно стать исходником следующей генерации.
+    if (method === 'POST' && path === '/api/wheel-reference') {
+      const user = auth.checkSession(tokenFrom(req));
+      if (!user) return send(res, 401, { error: 'нужен вход' });
+      const project = db.getProject(url.searchParams.get('projectId'));
+      if (!project || project.user_id !== user.id) return send(res, 404, { error: 'проект не найден' });
+
+      const ct = (req.headers['content-type'] || '').split(';')[0].trim();
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(ct)) {
+        return send(res, 415, { error: 'формат не поддерживается (JPG/PNG/WEBP/HEIC)' });
+      }
+      let buf;
+      try { buf = await readRaw(req, 20 * 1024 * 1024); }
+      catch { return send(res, 413, { error: 'файл больше 20 МБ' }); }
+      if (!buf.length) return send(res, 400, { error: 'пустой файл' });
+
+      let preflight;
+      try {
+        preflight = await validateVehiclePhoto(buf);
+        buf = await normalizeUploadedImage(buf);
+      } catch (error) {
+        if (error instanceof VehiclePhotoValidationError) return send(res, 422, { error: error.message, code: error.code });
+        return send(res, 422, { error: 'изображение повреждено или этот вариант HEIC не поддерживается' });
+      }
+      const fname = randomUUID() + '.jpg';
+      const storedUrl = await objectStorage.put({ scope: 'uploads', name: fname, bytes: buf });
+      const assetId = db.addSourceAsset({
+        projectId: project.id, type: 'wheel_reference', url: storedUrl,
+        contentSha256: createHash('sha256').update(buf).digest('hex'),
+      });
+      db.recordProductEvent({ userId: user.id, projectId: project.id, eventName: 'wheel_reference_uploaded', details: { width: preflight.width, height: preflight.height } });
+      return send(res, 201, { id: assetId, url: storedUrl, bytes: buf.length, normalized: true, preflight });
+    }
+
     // --- раздача загруженных файлов (ТОЛЬКО для локальной разработки) ---
     // TODO(prod): в проде файлы приватные, отдаются по временным (signed) ссылкам,
     // а не так свободно. Это лишь чтобы посмотреть загруженное на localhost.

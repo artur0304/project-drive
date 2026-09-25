@@ -137,7 +137,7 @@ export function listProjectsWithSummary(userId) {
       p.*,
       (SELECT a.url
          FROM source_assets a
-        WHERE a.project_id = p.id
+        WHERE a.project_id = p.id AND a.type = 'photo'
         ORDER BY a.created_at DESC
         LIMIT 1) AS source_url,
       (SELECT COUNT(*)
@@ -238,7 +238,7 @@ export function createResultReport({ versionId, userId, reason, note = null }) {
 
 // Последнее загруженное фото проекта (исходник для генерации).
 export function getLatestSourceAsset(projectId) {
-  return db.prepare('SELECT * FROM source_assets WHERE project_id = ? ORDER BY created_at DESC LIMIT 1').get(projectId) ?? null;
+  return db.prepare("SELECT * FROM source_assets WHERE project_id = ? AND type = 'photo' ORDER BY created_at DESC LIMIT 1").get(projectId) ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +265,7 @@ export function getCustomizationCatalog() {
   };
 }
 
-export function resolveCatalogOperations(operations) {
+export function resolveCatalogOperations(operations, { projectId = null } = {}) {
   return operations.map((operation) => {
     if (operation.kind === 'wrap' && operation.optionId) {
       const row = db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.prompt_fragment,
@@ -302,6 +302,16 @@ export function resolveCatalogOperations(operations) {
         referenceImage: row.reference_url,
         reference: { id: row.reference_id, fal_url: row.fal_url },
         promptFragment: `Replace the wheels on the car in the first image with the exact wheel design shown in the second image. Match the reference wheel's spokes, style and finish as closely as possible. ${row.prompt_fragment || ''}`.trim(),
+      };
+    }
+    if (operation.kind === 'wheel_replace' && operation.referenceAssetId) {
+      const row = db.prepare("SELECT id, url FROM source_assets WHERE id = ? AND project_id = ? AND type = 'wheel_reference'")
+        .get(operation.referenceAssetId, projectId);
+      if (!row) throw Object.assign(new Error('референс диска не найден в этом проекте'), { statusCode: 400 });
+      return {
+        kind: 'wheel_replace', referenceAssetId: row.id, name: operation.name || 'Custom wheel reference',
+        referenceImage: row.url,
+        promptFragment: `Replace the wheels on the car in the first image with the exact wheel design shown in the second image. Reproduce its spoke count, spoke shape, concavity, center cap, rim lip, color and finish. Apply the same design to every visible wheel while preserving correct perspective, tire size and brake geometry.`,
       };
     }
     // Legacy saved drafts remain usable in mock mode. Live requests are checked

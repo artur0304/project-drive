@@ -22,14 +22,15 @@ function WheelCard({ wheel, selected, favorite, onSelect, onFavorite }) {
     <div className="wheelCardFoot">
       {wheel.source_url
         ? <a className="wheelSource" href={wheel.source_url} target="_blank" rel="noreferrer" title={wheel.image_rights_basis || 'Image source'}>Photo source</a>
-        : <span className="wheelCardHint">Adds a wheel pass</span>}
+        : <span className="wheelCardHint">Included in one generation</span>}
       <button type="button" onClick={() => onSelect(wheel)}>Try on</button>
     </div>
   </article>;
 }
 
-export default function WheelCatalog({ draft, onSelect }) {
+export default function WheelCatalog({ draft, onSelect, customReference, onCustomReference, onUseCustomReference }) {
   const viewportRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [mode, setMode] = useState('popular');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ kind: '', diameter: '', finish: '', color: '', brand: '', style: '' });
@@ -40,7 +41,31 @@ export default function WheelCatalog({ draft, onSelect }) {
   const [scrollTop, setScrollTop] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [customPreview, setCustomPreview] = useState('');
   const token = getToken();
+
+  useEffect(() => {
+    if (!customReference?.file) { setCustomPreview(''); return undefined; }
+    const url = URL.createObjectURL(customReference.file);
+    setCustomPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [customReference]);
+
+  async function chooseCustomFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+      setError('Use a JPG, PNG, WEBP or HEIC wheel photo.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Wheel photo must be smaller than 20 MB.');
+      return;
+    }
+    setError('');
+    await onCustomReference(file);
+  }
 
   const filterKey = JSON.stringify(filters);
   useEffect(() => {
@@ -107,6 +132,23 @@ export default function WheelCatalog({ draft, onSelect }) {
   ];
 
   return <section className="wheelCatalog" aria-label="Wheel catalog">
+    <article className={draft.wheel?.customReference ? 'customWheelUpload active' : 'customWheelUpload'}>
+      <div className="customWheelVisual">
+        {customPreview
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={customPreview} alt="Your wheel reference" />
+          : <span aria-hidden="true">＋</span>}
+      </div>
+      <div className="customWheelCopy">
+        <span>YOUR REFERENCE</span>
+        <strong>{customReference?.name || 'Upload any wheel you like'}</strong>
+        <small>Use a sharp, front-facing photo. We’ll match the spoke design and finish.</small>
+      </div>
+      <button type="button" onClick={() => customReference && !draft.wheel?.customReference ? onUseCustomReference() : fileInputRef.current?.click()}>
+        {!customReference ? 'Choose photo' : draft.wheel?.customReference ? 'Replace' : 'Use photo'}
+      </button>
+      <input ref={fileInputRef} className="visuallyHiddenFile" type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={chooseCustomFile} />
+    </article>
     <div className="catalogModes">{[['popular', 'Popular'], ['favorites', 'Favorites'], ['recent', 'Recent']].map(([value, label]) => <button key={value} type="button" className={mode === value ? 'active' : ''} onClick={() => setMode(value)}>{label}</button>)}</div>
     {mode === 'popular' && <>
       <label className="wheelSearch"><span aria-hidden="true">⌕</span><input aria-label="Search wheels" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brand or model" /></label>
