@@ -50,8 +50,19 @@ try {
   const overview = await json('/api/admin/overview', { token });
   assert.equal(overview.response.status, 200);
   assert.ok(overview.data.wheels.some((wheel) => wheel.id === variantId && wheel.visible === 1));
+  assert.ok(overview.data.wheelCatalogSources.some((source) => source.slug === 'shiny-diski' && source.usage_status === 'permission_required'));
 
-  console.log('✅ Админка требует front + ¾ reference с правами и валидирует прозрачные PNG перед публикацией.');
+  // Даже администратор не может случайно импортировать данные магазина, пока
+  // источник не предоставил письменное разрешение и не получил approved.
+  const blockedFeed = await json('/api/admin/wheels/feed', {
+    method: 'POST', token, body: { sourceSlug: 'shiny-diski', rows: [{
+      id: 'shop-1', brand: 'Mak', model: 'Rapp', diameter: 19,
+    }] },
+  });
+  assert.equal(blockedFeed.response.status, 409);
+  assert.match(blockedFeed.data.error, /не разрешён/);
+
+  console.log('✅ Админка требует права и два reference; магазин без разрешения заблокирован для импорта.');
 } finally {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }

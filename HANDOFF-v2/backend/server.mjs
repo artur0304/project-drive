@@ -283,6 +283,7 @@ export const server = createServer(async (req, res) => {
       if (method === 'GET' && path === '/api/admin/overview') {
         return send(res, 200, {
           wheels: db.listAdminWheels(), aiJobs: db.listAiJobs(), audit: db.listAuditLog(), users: db.listUsers(),
+          wheelCatalogSources: db.listWheelCatalogSources(),
           productAnalytics: db.getProductAnalytics(),
           invites: db.listInviteCodes(), waitlist: db.listWaitlist(),
         });
@@ -297,6 +298,16 @@ export const server = createServer(async (req, res) => {
         const entries = body.rows.map((row) => ({ ...parseWheelEntry(row), actorUserId: user.id }));
         const created = db.importWheelCatalogEntries(entries);
         return send(res, 201, { created: created.length, items: created });
+      }
+      if (method === 'POST' && path === '/api/admin/wheels/feed') {
+        const body = await readBody(req, 2 * 1024 * 1024);
+        if (!Array.isArray(body.rows) || !body.rows.length || body.rows.length > 5000) {
+          return send(res, 400, { error: 'нужно от 1 до 5000 строк официального фида' });
+        }
+        const result = db.importAuthorizedWheelFeedEntries({
+          sourceSlug: String(body.sourceSlug || '').trim(), rows: body.rows, actorUserId: user.id,
+        });
+        return send(res, 200, result);
       }
       const adminWheelMatch = path.match(/^\/api\/admin\/wheels\/([^/]+)$/);
       if (method === 'PATCH' && adminWheelMatch) {

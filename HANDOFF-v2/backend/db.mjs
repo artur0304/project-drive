@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { normalizeAuthorizedFeed } from './wheel-feed.mjs';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 
@@ -505,6 +506,12 @@ export function listWheelFacets() {
   };
 }
 
+export function listWheelCatalogSources() {
+  return db.prepare(`SELECT id, slug, name, base_url, terms_url, usage_status,
+      rights_basis, contact_email, notes, created_at, updated_at
+    FROM wheel_catalog_sources ORDER BY name`).all();
+}
+
 export function toggleFavoriteWheel({ userId, variantId }) {
   if (!db.prepare('SELECT 1 FROM wheel_variants WHERE id = ? AND visible = 1').get(variantId)) return null;
   const existing = db.prepare('SELECT 1 FROM favorite_wheels WHERE user_id = ? AND variant_id = ?').get(userId, variantId);
@@ -567,7 +574,7 @@ export function setWheelVisibility({ variantId, visible, actorUserId }) {
   return { id: variantId, visible: Boolean(visible) };
 }
 
-function insertWheelCatalogEntry({ brand, brandSlug, isOem = false, model, modelSlug, variant, actorUserId }) {
+function insertWheelCatalogEntry({ brand, brandSlug, isOem = false, model, modelSlug, variant, source = null, actorUserId }) {
   const brandId = randomUUID();
   const modelId = randomUUID();
   const variantId = randomUUID();
@@ -582,17 +589,23 @@ function insertWheelCatalogEntry({ brand, brandSlug, isOem = false, model, model
   if (!existingModel) {
     db.prepare(`INSERT INTO wheel_models
       (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity,
-       image_rights_source, image_rights_basis, visible, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`)
+       image_rights_source, image_rights_basis, visible, created_at,
+       source_id, external_id, source_url, category, wheel_type, country_of_origin)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)`)
       .run(modelId, selectedBrandId, modelSlug, model, variant.supplier || null,
         variant.priceCents ?? null, variant.affiliateLink || null, variant.popularity || 0,
-        variant.rightsSource, variant.rightsBasis, now());
+        variant.rightsSource, variant.rightsBasis, now(),
+        source?.id || null, source?.externalId || null, source?.sourceUrl || null,
+        source?.category || null, source?.wheelType || null, source?.country || null);
   }
   db.prepare(`INSERT INTO wheel_variants
-    (id, model_id, size_label, diameter, color, finish, bolt_pattern, offset, center_bore, visible, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`)
+    (id, model_id, size_label, diameter, color, finish, bolt_pattern, offset, center_bore, visible, created_at,
+     width, sku, stock_status, source_price_cents, source_currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`)
     .run(variantId, selectedModelId, variant.sizeLabel, variant.diameter, variant.color, variant.finish,
-      variant.boltPattern || null, variant.offset ?? null, variant.centerBore ?? null, now());
+      variant.boltPattern || null, variant.offset ?? null, variant.centerBore ?? null, now(),
+      variant.width ?? null, variant.sku || null, variant.stockStatus || null,
+      variant.priceCents ?? null, variant.currency || null);
   writeAuditLog({ actorUserId, action: 'wheel.create', entityType: 'wheel_variant', entityId: variantId });
   return { id: variantId, visible: false };
 }
@@ -612,6 +625,94 @@ export function importWheelCatalogEntries(entries) {
     const results = entries.map(insertWheelCatalogEntry);
     db.exec('COMMIT');
     return results;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}
+
+// Массовая синхронизация официального фида. Источник проверяется ещё раз на
+// уровне БД, поэтому ошибочная кнопка или отдельный скрипт не смогут импортировать
+// каталог со статусом permission_required. Новые позиции остаются скрытыми до
+// загрузки двух разрешённых reference-изображений.
+export function importAuthorizedWheelFeedEntries({ sourceSlug, rows, actorUserId }) {
+  const sourceRow = db.prepare('SELECT * FROM wheel_catalog_sources WHERE slug = ?').get(sourceSlug);
+  if (!sourceRow) throw Object.assign(new Error('источник каталога не зарегистрирован'), { statusCode: 404 });
+  if (sourceRow.usage_status !== 'approved' || !sourceRow.rights_basis) {
+    throw Object.assign(new Error(`источник ${sourceRow.name} не разрешён: нужно письменное основание прав`), { statusCode: 409 });
+  }
+  const entries = normalizeAuthorizedFeed(rows, {
+    id: sourceRow.id,
+    name: sourceRow.name,
+    usageStatus: sourceRow.usage_status,
+    rightsBasis: sourceRow.rights_basis,
+  });
+
+  let created = 0;
+  let updated = 0;
+  db.exec('BEGIN');
+  try {
+    for (const entry of entries) {
+      let brand = db.prepare('SELECT id FROM wheel_brands WHERE slug = ?').get(entry.brandSlug);
+      if (!brand) {
+        const id = randomUUID();
+        db.prepare(`INSERT INTO wheel_brands (id, slug, name, is_oem, visible, created_at)
+          VALUES (?, ?, ?, ?, 1, ?)`).run(id, entry.brandSlug, entry.brand, entry.isOem ? 1 : 0, now());
+        brand = { id };
+      }
+
+      let model = db.prepare('SELECT id FROM wheel_models WHERE source_id = ? AND external_id = ?')
+        .get(sourceRow.id, entry.source.externalId);
+      if (!model) {
+        const id = randomUUID();
+        db.prepare(`INSERT INTO wheel_models
+          (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity,
+           image_rights_source, image_rights_basis, visible, created_at,
+           source_id, external_id, source_url, category, wheel_type, country_of_origin)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`)
+          .run(id, brand.id, entry.modelSlug, entry.model, entry.variant.supplier,
+            entry.variant.priceCents, entry.variant.affiliateLink, entry.variant.popularity,
+            entry.variant.rightsSource, entry.variant.rightsBasis, now(), sourceRow.id,
+            entry.source.externalId, entry.source.sourceUrl, entry.source.category,
+            entry.source.wheelType, entry.source.country);
+        model = { id };
+      } else {
+        db.prepare(`UPDATE wheel_models SET brand_id=?, slug=?, name=?, supplier=?, price_cents=?,
+          affiliate_link=?, popularity=?, image_rights_source=?, image_rights_basis=?, source_url=?,
+          category=?, wheel_type=?, country_of_origin=? WHERE id=?`)
+          .run(brand.id, entry.modelSlug, entry.model, entry.variant.supplier,
+            entry.variant.priceCents, entry.variant.affiliateLink, entry.variant.popularity,
+            entry.variant.rightsSource, entry.variant.rightsBasis, entry.source.sourceUrl,
+            entry.source.category, entry.source.wheelType, entry.source.country, model.id);
+      }
+
+      const existing = db.prepare(`SELECT id FROM wheel_variants
+        WHERE model_id=? AND size_label=? AND color=? AND finish=?`)
+        .get(model.id, entry.variant.sizeLabel, entry.variant.color, entry.variant.finish);
+      if (existing) {
+        db.prepare(`UPDATE wheel_variants SET diameter=?, width=?, bolt_pattern=?, offset=?, center_bore=?,
+          sku=?, stock_status=?, source_price_cents=?, source_currency=? WHERE id=?`)
+          .run(entry.variant.diameter, entry.variant.width, entry.variant.boltPattern,
+            entry.variant.offset, entry.variant.centerBore, entry.variant.sku,
+            entry.variant.stockStatus, entry.variant.priceCents, entry.variant.currency, existing.id);
+        updated += 1;
+      } else {
+        const variantId = randomUUID();
+        db.prepare(`INSERT INTO wheel_variants
+          (id, model_id, size_label, diameter, color, finish, bolt_pattern, offset, center_bore,
+           visible, created_at, width, sku, stock_status, source_price_cents, source_currency)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`)
+          .run(variantId, model.id, entry.variant.sizeLabel, entry.variant.diameter,
+            entry.variant.color, entry.variant.finish, entry.variant.boltPattern,
+            entry.variant.offset, entry.variant.centerBore, now(), entry.variant.width,
+            entry.variant.sku, entry.variant.stockStatus, entry.variant.priceCents, entry.variant.currency);
+        created += 1;
+      }
+    }
+    writeAuditLog({ actorUserId, action: 'wheel.feed_sync', entityType: 'wheel_catalog_source',
+      entityId: sourceRow.id, details: { rows: entries.length, created, updated } });
+    db.exec('COMMIT');
+    return { source: sourceRow.slug, received: entries.length, created, updated };
   } catch (error) {
     db.exec('ROLLBACK');
     throw error;
