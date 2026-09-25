@@ -11,8 +11,8 @@ import sharp from 'sharp';
 const selection = [
   { title: 'AEZValenciaD.tif', slug: 'aez-valencia-d', brand: 'AEZ', model: 'Valencia D', style: 'multi_spoke', color: 'Silver / black', finish: 'Machined' },
   { title: 'Ats amgpenta.jpg', slug: 'ats-amg-penta', brand: 'ATS', model: 'AMG Penta', style: '5_spoke', color: 'Black', finish: 'Polished lip' },
-  { title: 'Brabus Rim Top Marques 2019 IMG 1123.jpg', slug: 'brabus-monoblock', brand: 'BRABUS', model: 'Monoblock', style: 'monoblock', color: 'Silver', finish: 'Machined' },
-  { title: 'Felge Borbet Tuning World (Foto Hilarmont).JPG', slug: 'borbet-tuning-world', brand: 'BORBET', model: 'Tuning World', style: 'multi_piece', color: 'Silver', finish: 'Polished' },
+  { title: 'Brabus Rim Top Marques 2019 IMG 1123.jpg', slug: 'brabus-monoblock', brand: 'BRABUS', model: 'Top Marques 2019 exhibit', style: 'monoblock', color: 'Silver', finish: 'Machined' },
+  { title: 'Felge Borbet Tuning World (Foto Hilarmont).JPG', slug: 'borbet-tuning-world', brand: 'BORBET', model: 'Tuning World exhibit', style: 'multi_piece', color: 'Silver', finish: 'Polished' },
   { title: 'BBS 1999 TypRX2.jpg', slug: 'bbs-rx2', brand: 'BBS', model: 'RX II', style: 'split_spoke', color: 'Silver', finish: 'Machined' },
   { title: 'BBS RS764.JPG', slug: 'bbs-rs764', brand: 'BBS', model: 'RS 764', style: 'mesh', color: 'Silver', finish: 'Painted' },
   { title: 'Hoshinoracing impul d 01 wheel.jpg', slug: 'impul-d01', brand: 'Hoshino Racing', model: 'Impul D-01', style: 'aero_disc', color: 'White / black', finish: 'Polished lip' },

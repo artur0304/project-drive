@@ -62,7 +62,7 @@ VALUES
 INSERT OR IGNORE INTO wheel_models
   (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity, image_rights_source, image_rights_basis, visible, created_at, prompt_fragment, source_id, external_id, source_url, category, wheel_type, country_of_origin)
 VALUES
-  ('model-commons-brabus-monoblock', 'brand-commons-brabus', 'brabus-monoblock', 'Monoblock', NULL, NULL, NULL, 218,
+  ('model-commons-brabus-monoblock', 'brand-commons-brabus', 'brabus-monoblock', 'Top Marques 2019 exhibit', NULL, NULL, NULL, 218,
    'Wikimedia Commons', 'CC BY-SA 4.0; photo: Alexander Migl', 1, '2026-09-25T00:00:00.000Z',
    'monoblock wheel in silver with machined finish, matching the supplied reference photograph exactly',
    'source-wikimedia-commons', 'Brabus Rim Top Marques 2019 IMG 1123.jpg', 'https://commons.wikimedia.org/wiki/File%3ABrabus_Rim_Top_Marques_2019_IMG_1123.jpg', 'aftermarket', NULL, NULL);
@@ -80,7 +80,7 @@ VALUES
 INSERT OR IGNORE INTO wheel_models
   (id, brand_id, slug, name, supplier, price_cents, affiliate_link, popularity, image_rights_source, image_rights_basis, visible, created_at, prompt_fragment, source_id, external_id, source_url, category, wheel_type, country_of_origin)
 VALUES
-  ('model-commons-borbet-tuning-world', 'brand-commons-borbet', 'borbet-tuning-world', 'Tuning World', NULL, NULL, NULL, 217,
+  ('model-commons-borbet-tuning-world', 'brand-commons-borbet', 'borbet-tuning-world', 'Tuning World exhibit', NULL, NULL, NULL, 217,
    'Wikimedia Commons', 'CC BY-SA 3.0 de; photo: Hilarmont', 1, '2026-09-25T00:00:00.000Z',
    'multi piece wheel in silver with polished finish, matching the supplied reference photograph exactly',
    'source-wikimedia-commons', 'Felge Borbet Tuning World (Foto Hilarmont).JPG', 'https://commons.wikimedia.org/wiki/File%3AFelge_Borbet_Tuning_World_(Foto_Hilarmont).JPG', 'aftermarket', NULL, NULL);
