@@ -14,6 +14,15 @@ assert.ok(db.listWheels({ search: 'Vossen' }).items.every((wheel) => wheel.brand
 assert.ok(db.listWheels({ kind: 'oem' }).items.every((wheel) => wheel.is_oem === 1));
 assert.ok(db.listWheels({ diameter: 22 }).items.every((wheel) => wheel.diameter === 22));
 
+// Licensed Commons designs are real named wheels, and unknown fitment sizes
+// stay out of the diameter filter instead of being guessed.
+const aez = db.listWheels({ search: 'Valencia D' }).items[0];
+assert.equal(aez.brand, 'AEZ');
+assert.equal(aez.image_url, '/wheel-catalog/commons/aez-valencia-d.webp');
+assert.ok(!db.listWheelFacets().diameters.includes(0));
+const resolvedAez = db.resolveCatalogOperations([{ kind: 'wheel_replace', variantId: aez.id }])[0];
+assert.equal(resolvedAez.referenceImage, aez.image_url);
+
 const user = db.createUser({ email: 'wheel-owner@example.com' });
 const wheelId = firstPage.items[0].id;
 assert.deepEqual(db.toggleFavoriteWheel({ userId: user.id, variantId: wheelId }), { favorite: true });

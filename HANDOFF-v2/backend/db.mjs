@@ -292,7 +292,9 @@ export function resolveCatalogOperations(operations) {
           r.id AS reference_id, r.url AS reference_url, r.fal_url, r.watermark_free_confirmed
         FROM wheel_variants v JOIN wheel_models m ON m.id=v.model_id JOIN wheel_brands b ON b.id=m.brand_id
         LEFT JOIN wheel_reference_images r ON r.id=(SELECT id FROM wheel_reference_images
-          WHERE variant_id=v.id AND angle='three_quarter' ORDER BY created_at LIMIT 1)
+          WHERE variant_id=v.id
+          ORDER BY CASE angle WHEN 'three_quarter' THEN 0 ELSE 1 END, is_primary DESC, created_at
+          LIMIT 1)
         WHERE v.id=? AND v.visible=1 AND m.visible=1 AND b.visible=1`).get(operation.variantId);
       if (!row || !row.reference_url || !row.watermark_free_confirmed) throw Object.assign(new Error('диск или подтверждённый reference не найден'), { statusCode: 400 });
       return {
@@ -480,6 +482,7 @@ export function listWheels({ search = '', brand = '', kind = '', diameter = null
   const rows = db.prepare(`
     SELECT v.id, b.name AS brand, b.slug AS brand_slug, b.is_oem,
            m.name AS model, m.supplier, m.price_cents, m.affiliate_link, m.popularity,
+           m.source_url, m.image_rights_source, m.image_rights_basis,
            v.size_label, v.diameter, v.color, v.finish, v.spoke_style,
            r.url AS image_url, r.angle AS image_angle
       FROM wheel_variants v
@@ -499,7 +502,9 @@ export function listWheels({ search = '', brand = '', kind = '', diameter = null
 export function listWheelFacets() {
   return {
     brands: db.prepare('SELECT slug, name, is_oem FROM wheel_brands WHERE visible = 1 ORDER BY name').all(),
-    diameters: db.prepare('SELECT DISTINCT diameter FROM wheel_variants WHERE visible = 1 ORDER BY diameter').all().map((row) => row.diameter),
+    // A zero diameter means the licensed photograph identifies the design but
+    // not a sellable fitment. Keep it searchable without inventing a size.
+    diameters: db.prepare('SELECT DISTINCT diameter FROM wheel_variants WHERE visible = 1 AND diameter > 0 ORDER BY diameter').all().map((row) => row.diameter),
     finishes: db.prepare('SELECT DISTINCT finish FROM wheel_variants WHERE visible = 1 ORDER BY finish').all().map((row) => row.finish),
     colors: db.prepare('SELECT DISTINCT color FROM wheel_variants WHERE visible = 1 ORDER BY color').all().map((row) => row.color),
     styles: db.prepare('SELECT DISTINCT spoke_style FROM wheel_variants WHERE visible = 1 AND spoke_style IS NOT NULL ORDER BY spoke_style').all().map((row) => row.spoke_style),
@@ -522,7 +527,8 @@ export function toggleFavoriteWheel({ userId, variantId }) {
 
 const wheelSelect = `
   SELECT v.id, b.name AS brand, b.slug AS brand_slug, b.is_oem, m.name AS model,
-         m.popularity, v.size_label, v.diameter, v.color, v.finish, v.spoke_style,
+         m.popularity, m.source_url, m.image_rights_source, m.image_rights_basis,
+         v.size_label, v.diameter, v.color, v.finish, v.spoke_style,
          r.url AS image_url
     FROM wheel_variants v JOIN wheel_models m ON m.id = v.model_id
     JOIN wheel_brands b ON b.id = m.brand_id

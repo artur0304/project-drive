@@ -19,7 +19,12 @@ function WheelCard({ wheel, selected, favorite, onSelect, onFavorite }) {
       <strong>{wheel.model}</strong>
       <small>{wheel.size_label} · {wheel.color} · {wheel.finish}</small>
     </button>
-    <div className="wheelCardFoot"><span className="wheelCardHint">Adds a wheel pass</span><button type="button" onClick={() => onSelect(wheel)}>Try on</button></div>
+    <div className="wheelCardFoot">
+      {wheel.source_url
+        ? <a className="wheelSource" href={wheel.source_url} target="_blank" rel="noreferrer" title={wheel.image_rights_basis || 'Image source'}>Photo source</a>
+        : <span className="wheelCardHint">Adds a wheel pass</span>}
+      <button type="button" onClick={() => onSelect(wheel)}>Try on</button>
+    </div>
   </article>;
 }
 

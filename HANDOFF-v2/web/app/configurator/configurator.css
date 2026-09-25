@@ -97,6 +97,8 @@
 .favoriteButton { position:absolute; z-index:2; top:8px; right:8px; width:28px; height:28px; padding:0; border:1px solid rgba(255,255,255,.1); border-radius:50%; background:rgba(12,14,19,.76); color:#f3c0b8; font-size:17px; cursor:pointer; backdrop-filter:blur(8px); }
 .wheelCardFoot { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:7px 8px; border-top:1px solid var(--line); color:var(--text-3); font-size:9px; }
 .wheelCardFoot button { padding:6px 8px; border:0; border-radius:6px; background:var(--accent); color:#180A06; font:700 9.5px/1 Manrope,sans-serif; cursor:pointer; }
+.wheelSource { color:var(--text-3); text-decoration:none; }
+.wheelSource:hover { color:var(--text-2); text-decoration:underline; }
 .catalogMessage { margin:14px 0; color:var(--text-3); font-size:12px; text-align:center; }
 .catalogMessage.error { color:#ff9b88; }
 .loadMoreWheels { width:100%; margin-top:10px; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text-2); cursor:pointer; }

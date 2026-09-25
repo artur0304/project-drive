@@ -1,0 +1,439 @@
+[
+  {
+    "title": "AEZValenciaD.tif",
+    "slug": "aez-valencia-d",
+    "brand": "AEZ",
+    "model": "Valencia D",
+    "style": "multi_spoke",
+    "color": "Silver / black",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/aez-valencia-d.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "AEZValenciaD.tif",
+      "description": "AEZ Valencia Dark",
+      "artist": "JamesGrayWheelwright",
+      "credit": "Own work",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AAEZValenciaD.tif",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/82/AEZValenciaD.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/82/AEZValenciaD.tif/lossy-page1-1280px-AEZValenciaD.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2418,
+      "height": 2301,
+      "mime": "image/tiff",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Ats amgpenta.jpg",
+    "slug": "ats-amg-penta",
+    "brand": "ATS",
+    "model": "AMG Penta",
+    "style": "5_spoke",
+    "color": "Black",
+    "finish": "Polished lip",
+    "asset": "/wheel-catalog/commons/ats-amg-penta.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Ats amgpenta.jpg",
+      "description": "Photograph of a circa 1984 AMG 8JX16 Five Spoke aluminum alloy wheel manufactured by ATS. Designed by H.W. Aufrecht in 1979 and the first aluminum alloy wheel marketed by AMG when it was still an independent tuning company.",
+      "artist": "Relaxatiallc",
+      "credit": "Own work",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AAts_amgpenta.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Ats_amgpenta.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Ats_amgpenta.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 800,
+      "height": 760,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Brabus Rim Top Marques 2019 IMG 1123.jpg",
+    "slug": "brabus-monoblock",
+    "brand": "BRABUS",
+    "model": "Monoblock",
+    "style": "monoblock",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/brabus-monoblock.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Brabus Rim Top Marques 2019 IMG 1123.jpg",
+      "description": "Brabus Rim at Top Marques 2019",
+      "artist": "Alexander Migl",
+      "credit": "Own work",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ABrabus_Rim_Top_Marques_2019_IMG_1123.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Brabus_Rim_Top_Marques_2019_IMG_1123.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Brabus_Rim_Top_Marques_2019_IMG_1123.jpg/1280px-Brabus_Rim_Top_Marques_2019_IMG_1123.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3890,
+      "height": 3890,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Felge Borbet Tuning World (Foto Hilarmont).JPG",
+    "slug": "borbet-tuning-world",
+    "brand": "BORBET",
+    "model": "Tuning World",
+    "style": "multi_piece",
+    "color": "Silver",
+    "finish": "Polished",
+    "asset": "/wheel-catalog/commons/borbet-tuning-world.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Felge Borbet Tuning World (Foto Hilarmont).JPG",
+      "description": "Felge der Marke Borbet auf der Tuning World",
+      "artist": "Hilarmont",
+      "credit": "Own work",
+      "license": "CC BY-SA 3.0 de",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AFelge_Borbet_Tuning_World_(Foto_Hilarmont).JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/35/Felge_Borbet_Tuning_World_%28Foto_Hilarmont%29.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Felge_Borbet_Tuning_World_%28Foto_Hilarmont%29.JPG/1280px-Felge_Borbet_Tuning_World_%28Foto_Hilarmont%29.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 5184,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "BBS 1999 TypRX2.jpg",
+    "slug": "bbs-rx2",
+    "brand": "BBS",
+    "model": "RX II",
+    "style": "split_spoke",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/bbs-rx2.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "BBS 1999 TypRX2.jpg",
+      "description": "Bild von einem BBS RX II Rad, 19 Zoll",
+      "artist": "Vito Ianniello",
+      "credit": "Transferred from de.wikipedia to Commons by Saibo using CommonsHelper .",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ABBS_1999_TypRX2.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8e/BBS_1999_TypRX2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/BBS_1999_TypRX2.jpg/1280px-BBS_1999_TypRX2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2748,
+      "height": 2622,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "BBS RS764.JPG",
+    "slug": "bbs-rs764",
+    "brand": "BBS",
+    "model": "RS 764",
+    "style": "mesh",
+    "color": "Silver",
+    "finish": "Painted",
+    "asset": "/wheel-catalog/commons/bbs-rs764.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "BBS RS764.JPG",
+      "description": "BBS RS764 RSII for the BBS Wheel Library",
+      "artist": "James Hipwell Photography",
+      "credit": "Own work",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ABBS_RS764.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0a/BBS_RS764.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/BBS_RS764.JPG/1280px-BBS_RS764.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 1575,
+      "height": 1514,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:BBS alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Hoshinoracing impul d 01 wheel.jpg",
+    "slug": "impul-d01",
+    "brand": "Hoshino Racing",
+    "model": "Impul D-01",
+    "style": "aero_disc",
+    "color": "White / black",
+    "finish": "Polished lip",
+    "asset": "/wheel-catalog/commons/impul-d01.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Hoshinoracing impul d 01 wheel.jpg",
+      "description": "1980年に発売されたホシノインパル最初の製品、D-01ホイール",
+      "artist": "Sasa21",
+      "credit": "Own work",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AHoshinoracing_impul_d_01_wheel.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Hoshinoracing_impul_d_01_wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Hoshinoracing_impul_d_01_wheel.jpg/1280px-Hoshinoracing_impul_d_01_wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 2001,
+      "height": 2000,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Workequip04.png",
+    "slug": "work-equip-04",
+    "brand": "WORK",
+    "model": "Equip 04",
+    "style": "4_spoke",
+    "color": "Bronze",
+    "finish": "Polished lip",
+    "asset": "/wheel-catalog/commons/work-equip-04.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Workequip04.png",
+      "description": "WORK Equip 04",
+      "artist": "JadenNZ",
+      "credit": "Own work",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AWorkequip04.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Workequip04.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Workequip04.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 1000,
+      "height": 859,
+      "mime": "image/png",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires",
+        "Category:Multi-piece alloy wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "OZ35Anniversary.jpg",
+    "slug": "oz-35-anniversary",
+    "brand": "OZ Racing",
+    "model": "35 Anniversary",
+    "style": "multi_spoke",
+    "color": "Black / silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/oz-35-anniversary.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "OZ35Anniversary.jpg",
+      "description": "OZ 35 Anniversary",
+      "artist": "OZ",
+      "credit": "OZ",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3AOZ35Anniversary.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/OZ35Anniversary.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/OZ35Anniversary.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 900,
+      "height": 900,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:OZ Racing wheels"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "DOTZMugelloLake30.jpg",
+    "slug": "dotz-mugello",
+    "brand": "DOTZ",
+    "model": "Mugello",
+    "style": "split_5_spoke",
+    "color": "Black / red",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/dotz-mugello.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "DOTZMugelloLake30.jpg",
+      "description": "Dotz Mugello Lake 30",
+      "artist": "JamesGrayWheelwright",
+      "credit": "Own work",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ADOTZMugelloLake30.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4d/DOTZMugelloLake30.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4d/DOTZMugelloLake30.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "width": 1014,
+      "height": 998,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Rays F1 Front Wheel.JPG",
+    "slug": "rays-f1-front",
+    "brand": "RAYS",
+    "model": "F1 Front",
+    "style": "motorsport",
+    "color": "Gunmetal",
+    "finish": "Satin",
+    "asset": "/wheel-catalog/commons/rays-f1-front.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Rays F1 Front Wheel.JPG",
+      "description": "Rays F1 Front Wheel supplied to Williams F1 Team",
+      "artist": "Hatsukari715",
+      "credit": "Own work",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3ARays_F1_Front_Wheel.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/19/Rays_F1_Front_Wheel.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/Rays_F1_Front_Wheel.JPG/1280px-Rays_F1_Front_Wheel.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 1600,
+      "height": 1200,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  },
+  {
+    "title": "Porsche 911 (997) Carrera 4S Wheel.jpg",
+    "slug": "porsche-997-carrera-4s",
+    "brand": "Porsche",
+    "model": "997 Carrera 4S",
+    "style": "oem_sport",
+    "color": "Silver",
+    "finish": "Machined",
+    "asset": "/wheel-catalog/commons/porsche-997-carrera-4s.webp",
+    "derivative": {
+      "width": 1000,
+      "height": 1000,
+      "format": "webp",
+      "background": "#e7dfd2"
+    },
+    "source": {
+      "title": "Porsche 911 (997) Carrera 4S Wheel.jpg",
+      "description": "Porsche_911_(997)_Carrera_4S_Wheel",
+      "artist": "sanjoyg",
+      "credit": "https://www.flickr.com/photos/sanjoy/539996334/",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File%3APorsche_911_(997)_Carrera_4S_Wheel.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/73/Porsche_911_%28997%29_Carrera_4S_Wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "previewUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Porsche_911_%28997%29_Carrera_4S_Wheel.jpg/1280px-Porsche_911_%28997%29_Carrera_4S_Wheel.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "width": 3872,
+      "height": 2592,
+      "mime": "image/jpeg",
+      "commerciallyReusable": true,
+      "categories": [
+        "Category:Alloy wheels without tires"
+      ],
+      "downloadedWidth": 1000,
+      "downloadedHeight": 1000
+    }
+  }
+]
