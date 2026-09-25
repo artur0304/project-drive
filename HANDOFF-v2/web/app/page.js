@@ -68,22 +68,32 @@ export default function HomePage() {
   const [signedIn, setSignedIn] = useState(false);
   const [waitEmail, setWaitEmail] = useState('');
   const [waitMsg, setWaitMsg] = useState(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   async function joinWaitlist(event) {
     event.preventDefault();
     const email = waitEmail.trim();
-    if (!email) return;
+    if (!email || isJoining) return;
+    setIsJoining(true);
+    setWaitMsg(null);
     try {
       const result = await apiRequest('/api/waitlist', { method: 'POST', token: '', body: { email } });
       setWaitMsg(result.duplicate ? "You're already on the list — we'll be in touch." : "Thanks — you're on the waitlist. We'll send an invite code.");
       setWaitEmail('');
     } catch (error) {
       setWaitMsg(error.message || 'Could not join the waitlist. Try again.');
+    } finally {
+      setIsJoining(false);
     }
   }
   const car = useMemo(() => stateAt(progress), [progress]);
 
   useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduceMotion.matches) {
+      setProgress(1);
+      return undefined;
+    }
     let animationFrame = 0;
     function updateProgress() {
       const hero = document.getElementById('landingHero');
@@ -120,14 +130,14 @@ export default function HomePage() {
         <div className="landingCar"><CarDrawing body={car.body} wheel={car.wheel} tint={car.tint} /></div><div className="landingFloor" />
         <span className="landingCaption">{car.text.cap}</span><a className={`landingHeroCta ${progress > .9 ? 'show' : ''}`} href="/upload">Start with your photo</a>
       </div></section>
-      <section className="landingStory"><div><p className="sectionLabel">THE IDEA</p><h2>Decide on the build before the first piece changes.</h2><p>Upload one clear photo of your own car. Explore a <strong>wrap colour</strong>, <strong>window tint</strong> and <strong>wheels</strong> as one coherent direction. Keep the versions that feel right in your garage.</p></div></section>
+      <section className="landingStory"><div className="landingStoryGrid"><div className="storyMarker" aria-hidden="true"><span>01</span><i /></div><div><p className="sectionLabel">VISUAL DECISION TOOL</p><h2>Decide on the build before the first piece changes.</h2><p>Upload one clear photo of your own car. Explore a <strong>wrap colour</strong>, <strong>window tint</strong> and <strong>wheels</strong> as one coherent direction. Keep the versions that feel right in your garage.</p></div></div></section>
       <section className="landingSteps"><div><p>01</p><h3>Upload</h3><span>One exterior photo of your car.</span></div><div><p>02</p><h3>Configure</h3><span>Choose the visual changes.</span></div><div><p>03</p><h3>Compare</h3><span>Review and save each version.</span></div></section>
       <section className="landingWaitlist">
         <p className="sectionLabel">CLOSED BETA</p><h2>Want early access?</h2>
         <p>Leave your email and we&apos;ll send you an invite code to try it on your own car.</p>
-        <form className="waitlistForm" onSubmit={joinWaitlist}>
+        <form className="waitlistForm" onSubmit={joinWaitlist} aria-busy={isJoining}>
           <input type="email" required value={waitEmail} onChange={(event) => setWaitEmail(event.target.value)} placeholder="you@example.com" aria-label="Email for early access" />
-          <button type="submit">Request access</button>
+          <button type="submit" disabled={isJoining}>{isJoining ? 'Joining…' : 'Request access'}</button>
         </form>
         {waitMsg && <p className="waitlistMsg" role="status">{waitMsg}</p>}
       </section>

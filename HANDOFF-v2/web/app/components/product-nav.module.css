@@ -6,15 +6,15 @@
   justify-content: space-between;
   gap: 24px;
   margin: 0 auto;
-  border-bottom: 1px solid #252a32;
-  font-family: Manrope, system-ui, sans-serif;
+  border-bottom: 1px solid var(--pd-line);
+  font-family: var(--pd-font-body);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #f1eee8;
+  color: var(--pd-text);
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
@@ -25,9 +25,9 @@
   height: 30px;
   display: grid;
   place-items: center;
-  border: 1px solid #e5533b;
+  border: 1px solid rgba(237,87,63,.78);
   border-radius: 8px;
-  color: #e5533b;
+  color: var(--pd-accent);
   font-size: 10px;
   letter-spacing: .05em;
 }
@@ -39,33 +39,51 @@
 }
 
 .links a {
-  color: #8e929a;
+  position:relative;
+  min-height:38px;
+  display:inline-flex;
+  align-items:center;
+  color: var(--pd-muted);
   font-size: 12px;
+  font-weight:600;
   text-decoration: none;
+  transition:color 140ms var(--pd-ease-out), background-color 140ms var(--pd-ease-out), transform 120ms var(--pd-ease-out);
 }
 
 .links a:hover,
 .links .active {
-  color: #f1eee8;
+  color: var(--pd-text);
 }
+
+.links .active::after { position:absolute; right:0; bottom:-19px; left:0; height:1px; content:""; background:var(--pd-accent); }
 
 .balance {
   padding: 7px 10px;
-  border: 1px solid #303640;
+  min-height:34px!important;
+  padding:0 11px;
+  border: 1px solid var(--pd-line-strong);
   border-radius: 999px;
-  background: #171a20;
+  background: var(--pd-surface-raised);
   white-space: nowrap;
 }
 
 .balance strong {
-  color: #f1eee8;
+  color: var(--pd-text);
 }
+
+@media (hover:hover) and (pointer:fine) {
+  .links a:hover { color:var(--pd-text); }
+  .balance:hover { background:#20252d; }
+}
+.links a:active { transform:scale(.98); }
 
 @media (max-width: 700px) {
   .header { gap: 12px; }
   .brandText { display: none; }
-  .links { gap: 11px; }
+  .links { gap: 12px; }
+  .links>a:not(.balance) { display:none; }
+  .links .active { display:inline-flex!important; }
+  .links .active::after { bottom:-19px; }
   .balance { padding: 7px 9px; }
   .balanceLabel { display: none; }
 }
-
