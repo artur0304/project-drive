@@ -16,8 +16,11 @@ import { buildPrompt, FIDELITY_CLAUSE_V1, PROMPT_VERSION } from './prompt-builde
 const db = await import('./db.mjs');
 const { generateForProject, CREDITS_PER_PASS } = await import('./generation.mjs');
 const catalog = db.getCustomizationCatalog();
-assert.ok(catalog.wrapOptions.length >= 140 && catalog.wrapOptions.length <= 170);
-assert.ok(catalog.wrapOptions.every((option) => option.preview_asset?.startsWith('/wrap-catalog/')));
+assert.ok(catalog.wrapOptions.length >= 140 && catalog.wrapOptions.length <= 175);
+const verifiedWrapPhotos = catalog.wrapOptions.filter((option) => option.preview_asset);
+assert.equal(verifiedWrapPhotos.length, 3);
+assert.ok(verifiedWrapPhotos.every((option) => option.brand === '3M' && option.source_url?.startsWith('https://www.3m.com/')));
+assert.ok(catalog.wrapOptions.filter((option) => !option.brand).every((option) => option.preview_asset === null));
 assert.equal(catalog.tintLevels.length, 6);
 assert.equal(catalog.tintZones.length, 4);
 assert.equal(catalog.wheelColors.length, 8);

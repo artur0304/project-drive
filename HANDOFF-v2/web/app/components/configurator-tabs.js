@@ -10,8 +10,12 @@ export function WrapTab({ draft, catalog, family, finish, onFamily, onFinish, on
     <div className="filterPills wrapFinishPills"><button type="button" className={!finish ? 'active' : ''} onClick={() => onFinish('')}>All finishes</button>{finishes.map((item) => <button type="button" key={item.code} className={finish === item.code ? 'active' : ''} onClick={() => onFinish(item.code)}>{item.display_name}</button>)}</div>
     <div className="wrapResults"><span>Color & finish</span><span>{options.length} shown</span></div>
     <div className="wrapGrid">{options.map((option) => <button key={option.id} type="button" aria-pressed={draft.wrap?.optionId === option.id} className={draft.wrap?.optionId === option.id ? 'wrapCard active' : 'wrapCard'} onClick={() => onSelect(option)}>
-      <span className="wrapCardMedia">{option.preview_asset ? <img src={option.preview_asset} alt={`${option.color_name} ${option.finish_name} automotive vinyl`} loading="lazy" /> : <span style={{ background: option.hex }} />}</span>
-      <span className="wrapCardMeta"><strong>{option.color_name}</strong><small>{option.finish_name}</small></span>
+      <span className="wrapCardMedia" style={{ backgroundColor: option.hex }}>
+        {option.preview_asset
+          ? <><img src={option.preview_asset} alt={`${option.brand} ${option.series} ${option.color_name} automotive wrap film`} loading="lazy" referrerPolicy="no-referrer" /><span className="wrapPhotoBadge">OFFICIAL PHOTO</span></>
+          : <span className={`materialSwatch materialSwatch--${option.finish_code}`} style={{ '--wrap-color': option.hex }}><em>COLOR SAMPLE</em></span>}
+      </span>
+      <span className="wrapCardMeta"><strong>{option.color_name}</strong><small className="wrapProductLine">{option.brand ? `${option.brand} ${option.series}${option.product_code ? ` · ${option.product_code}` : ''}` : 'Project Drive palette'}</small><small className="wrapFinishLine">{option.finish_name}</small></span>
       <span className="wrapColorDot" style={{ background: option.hex }} aria-hidden="true" />
     </button>)}</div>
   </section>;

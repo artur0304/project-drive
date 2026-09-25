@@ -256,6 +256,7 @@ export function getCustomizationCatalog() {
     wrapColors: db.prepare(`SELECT id, code, display_name, hex, family, sort_order
       FROM wrap_colors WHERE is_active = 1 ORDER BY sort_order`).all(),
     wrapOptions: db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.preview_asset, o.sort_order,
+        o.brand, o.series, o.product_code, o.source_url,
         c.id AS color_id, c.code AS color_code, c.display_name AS color_name, c.hex, c.family,
         f.id AS finish_id, f.code AS finish_code, f.display_name AS finish_name
       FROM wrap_options o JOIN wrap_colors c ON c.id = o.color_id JOIN wrap_finishes f ON f.id = o.finish_id
