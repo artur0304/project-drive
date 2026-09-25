@@ -30,6 +30,7 @@ export default function ConfiguratorPage() {
   // React меняет disabled после перерисовки. Ref закрывает короткое окно, когда
   // два быстрых клика могли отправить два одинаковых запроса до перерисовки.
   const generationLockRef = useRef(false);
+  const panelBodyRef = useRef(null);
   const [activeTab, setActiveTab] = useState('wrap');
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [pendingPhoto, setPendingPhoto] = useState(null);
@@ -44,10 +45,19 @@ export default function ConfiguratorPage() {
   const [pricing, setPricing] = useState(null);
   const [catalog, setCatalog] = useState(null);
   const [wrapFamily, setWrapFamily] = useState('');
+  const [wrapFinish, setWrapFinish] = useState('');
   const [generationError, setGenerationError] = useState('');
   const [sheetState, setSheetState] = useState('half');
   const [command, setCommand] = useState('');
   const [commandPreview, setCommandPreview] = useState(null);
+
+  function openTab(value) {
+    setActiveTab(value);
+  }
+
+  useEffect(() => {
+    panelBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab]);
 
   useEffect(() => {
     let objectUrl = '';
@@ -142,7 +152,7 @@ export default function ConfiguratorPage() {
   function applyCommand() {
     if (!commandPreview) return;
     setDraft((current) => ({ ...current, ...commandPreview.patch }));
-    if (commandPreview.needsWheelSelection) setActiveTab('wheels');
+    if (commandPreview.needsWheelSelection) openTab('wheels');
     setCommandPreview(null);
   }
 
@@ -277,7 +287,7 @@ export default function ConfiguratorPage() {
           </div>
           <div className="configTabs" role="tablist" aria-label="Customization type">
             {[['wrap', 'Wrap'], ['tint', 'Tint'], ['wheels', 'Wheels'], ['wcolor', 'Wheel color']].map(([value, label]) => (
-              <button key={value} type="button" role="tab" aria-selected={activeTab === value} className={activeTab === value ? 'active' : ''} onClick={() => setActiveTab(value)}>{label}</button>
+              <button key={value} type="button" role="tab" aria-selected={activeTab === value} className={activeTab === value ? 'active' : ''} onClick={() => openTab(value)}>{label}</button>
             ))}
           </div>
         </header>
@@ -288,9 +298,9 @@ export default function ConfiguratorPage() {
           {commandPreview && <div className="commandPreview"><ul>{commandPreview.messages.map((message) => <li key={message}>{message}</li>)}</ul><div><button type="button" onClick={() => setCommandPreview(null)}>Cancel</button><button className="applyCommand" type="button" onClick={applyCommand}>Apply to draft</button></div></div>}
         </section></details>
 
-        <div className="panelBody">
+        <div className="panelBody" ref={panelBodyRef}>
           {!catalog && activeTab !== 'wheels' && <p className="catalogMessage">Loading catalog…</p>}
-          {catalog && activeTab === 'wrap' && <WrapTab draft={draft} catalog={catalog} family={wrapFamily} onFamily={setWrapFamily} onSelect={selectWrap} />}
+          {catalog && activeTab === 'wrap' && <WrapTab draft={draft} catalog={catalog} family={wrapFamily} finish={wrapFinish} onFamily={setWrapFamily} onFinish={setWrapFinish} onSelect={selectWrap} />}
           {catalog && activeTab === 'tint' && <TintTab draft={draft} catalog={catalog} onZone={selectTintZone} onLevel={selectTintLevel} />}
           {activeTab === 'wheels' && <WheelCatalog draft={draft} onSelect={selectWheel} />}
           {catalog && activeTab === 'wcolor' && <WheelColorTab draft={draft} options={catalog.wheelColors} onSelect={selectWheelColor} />}

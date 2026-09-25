@@ -16,7 +16,8 @@ import { buildPrompt, FIDELITY_CLAUSE_V1, PROMPT_VERSION } from './prompt-builde
 const db = await import('./db.mjs');
 const { generateForProject, CREDITS_PER_PASS } = await import('./generation.mjs');
 const catalog = db.getCustomizationCatalog();
-assert.ok(catalog.wrapOptions.length >= 40 && catalog.wrapOptions.length <= 60);
+assert.ok(catalog.wrapOptions.length >= 140 && catalog.wrapOptions.length <= 170);
+assert.ok(catalog.wrapOptions.every((option) => option.preview_asset?.startsWith('/wrap-catalog/')));
 assert.equal(catalog.tintLevels.length, 6);
 assert.equal(catalog.tintZones.length, 4);
 assert.equal(catalog.wheelColors.length, 8);

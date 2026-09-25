@@ -109,6 +109,33 @@
 .filterPills::-webkit-scrollbar { display:none; }
 .filterPills button,.zoneGrid button { flex:none; padding:8px 11px; border:1px solid var(--line); border-radius:9px; background:var(--bg-2); color:var(--text-2); font:650 10px/1 Manrope,sans-serif; text-transform:capitalize; cursor:pointer; }
 .filterPills button.active,.zoneGrid button.active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+.wrapCatalogIntro { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:21px; }
+.wrapCatalogIntro div { display:grid; gap:4px; }
+.wrapCatalogIntro div>span { color:var(--accent); font-size:9px; font-weight:800; letter-spacing:.14em; }
+.wrapCatalogIntro strong { font:650 20px/1.1 var(--pd-font-heading); letter-spacing:-.025em; }
+.wrapCatalogIntro small { color:var(--text-3); font-size:11px; }
+.wrapFamilyPills,.wrapFinishPills { margin-inline:-20px; padding-inline:20px; }
+.wrapResults { display:flex; justify-content:space-between; margin:24px 0 10px; color:var(--text-3); font-size:10px; font-weight:650; }
+.wrapResults span:first-child { color:var(--text-2); }
+.wrapGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+.wrapCard { min-width:0; position:relative; overflow:hidden; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--bg-2); color:var(--text); text-align:left; cursor:pointer; transition:transform 150ms var(--pd-ease-out),border-color 150ms var(--pd-ease-out),background-color 150ms var(--pd-ease-out); }
+.wrapCardMedia { display:block; position:relative; aspect-ratio:1.56; overflow:hidden; background:#c9c8c3; }
+.wrapCardMedia>img,.wrapCardMedia>span { display:block; width:100%; height:100%; object-fit:cover; }
+.wrapCardMedia::after { content:''; position:absolute; inset:0; box-shadow:inset 0 -1px rgba(255,255,255,.08); pointer-events:none; }
+.wrapCardMeta { display:block; min-width:0; padding:10px 30px 11px 10px; }
+.wrapCardMeta strong,.wrapCardMeta small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wrapCardMeta strong { font-size:11.5px; font-weight:700; }
+.wrapCardMeta small { margin-top:4px; color:var(--text-3); font-size:10px; }
+.wrapColorDot { position:absolute; right:10px; bottom:14px; width:11px; height:11px; border:1px solid rgba(255,255,255,.35); border-radius:50%; box-shadow:0 0 0 2px rgba(0,0,0,.18); }
+.wrapCard.active { border-color:var(--accent); background:#1b191b; box-shadow:inset 0 0 0 1px rgba(237,87,63,.34); }
+.wrapCard.active::after { content:'✓'; position:absolute; top:8px; right:8px; width:23px; height:23px; display:grid; place-items:center; border-radius:50%; background:var(--accent); color:#1d0b07; font-size:12px; font-weight:900; box-shadow:0 4px 12px rgba(0,0,0,.28); }
+.wheelFinishHint { margin:-9px 0 15px; color:var(--text-3); font-size:10.5px; line-height:1.5; }
+.wheelFinishGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+.wheelFinishCard { min-width:0; position:relative; overflow:hidden; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--bg-2); color:var(--text); text-align:left; cursor:pointer; transition:transform 150ms var(--pd-ease-out),border-color 150ms var(--pd-ease-out); }
+.wheelFinishMedia { display:block; aspect-ratio:1.56; overflow:hidden; background:#d8d5ce; }
+.wheelFinishMedia img { display:block; width:100%; height:100%; object-fit:cover; }
+.wheelFinishCard.active { border-color:var(--accent); box-shadow:inset 0 0 0 1px rgba(237,87,63,.34); }
+.wheelFinishCard.active::after { content:'✓'; position:absolute; top:8px; right:8px; width:23px; height:23px; display:grid; place-items:center; border-radius:50%; background:var(--accent); color:#1d0b07; font-size:12px; font-weight:900; }
 .catalogSwatches { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
 .catalogSwatch { min-width:0; padding:7px; border:1px solid var(--line); border-radius:11px; background:var(--bg-2); color:var(--text); text-align:left; cursor:pointer; }
 .catalogSwatch>span { display:block; aspect-ratio:1.65; margin-bottom:7px; border:1px solid rgba(255,255,255,.09); border-radius:7px; box-shadow:inset 0 0 16px rgba(255,255,255,.08); }
@@ -172,7 +199,7 @@
   .iconButton:hover { color:var(--text); border-color:var(--line-2); background:var(--panel-2); }
   .configTabs button:hover,.catalogModes button:hover,.filterChips button:hover,.filterPills button:hover,.zoneGrid button:hover { color:var(--text); }
   .swatch:hover { transform:scale(1.055); }
-  .catalogWheel:hover { transform:translateY(-2px); border-color:var(--line-2); }
+  .catalogWheel:hover,.wrapCard:hover,.wheelFinishCard:hover { transform:translateY(-2px); border-color:var(--line-2); }
   .generateButton:hover,.authSubmit:hover { background:var(--accent-2); }
 }
 .iconButton:active,.configTabs button:active,.catalogModes button:active,.filterChips button:active,.filterPills button:active,.zoneGrid button:active,.catalogSwatch:active,.wheelMain:active,.wheelCardFoot button:active,.generateButton:active,.authSubmit:active { transform:scale(.98); }
@@ -180,9 +207,9 @@
 @media (max-width:900px) {
   .configApp { display:block; height:100dvh; min-height:0; overflow:hidden; }
   .configStage { height:100dvh; min-height:0; padding-bottom:150px; }
-  .configPanel { position:fixed; z-index:10; right:0; bottom:0; left:0; height:58dvh; min-height:0; border:1px solid var(--line-2); border-bottom:0; border-radius:22px 22px 0 0; box-shadow:0 -24px 70px rgba(0,0,0,.5); }
+  .configPanel { position:fixed; z-index:10; right:0; bottom:0; left:0; height:72dvh; min-height:0; border:1px solid var(--line-2); border-bottom:0; border-radius:22px 22px 0 0; box-shadow:0 -24px 70px rgba(0,0,0,.5); }
   .configPanel.sheet-peek { height:170px; }
-  .configPanel.sheet-half { height:58dvh; }
+  .configPanel.sheet-half { height:72dvh; }
   .configPanel.sheet-full { height:calc(100dvh - 12px); }
   .sheetHandle { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; padding:8px 14px 5px; }
   .sheetHandle>button { width:64px; height:20px; padding:0; border:0; background:none; cursor:pointer; }
@@ -195,6 +222,10 @@
   .sheet-peek .configFoot { margin-top:auto; }
   .panelTop { padding-top:8px; }
   .panelBody { overscroll-behavior:contain; }
+  .configFoot { padding-top:11px; padding-bottom:13px; }
+  .configFoot .generateHint,.configFoot .generateSubnote { display:none; }
+  .operationList { gap:4px; margin-bottom:8px; }
+  .generateRow { padding-top:10px; }
   .virtualWheelViewport { height:min(42dvh,470px); }
   .sheet-full .virtualWheelViewport { height:calc(100dvh - 330px); }
   .photoStage { margin-bottom:100px; }
@@ -208,6 +239,7 @@
   .configAccountLinks>a:first-child { display:none; }
   .virtualWheelRow { gap:8px; }
   .wheelMain img { height:108px; }
+  .wrapFamilyPills,.wrapFinishPills { margin-inline:-14px; padding-inline:14px; }
 }
 @media (prefers-reduced-motion:reduce) {
   .configPanel { transition:none; }

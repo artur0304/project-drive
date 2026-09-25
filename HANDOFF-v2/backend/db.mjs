@@ -255,12 +255,12 @@ export function getCustomizationCatalog() {
       FROM wrap_finishes WHERE is_active = 1 ORDER BY sort_order`).all(),
     wrapColors: db.prepare(`SELECT id, code, display_name, hex, family, sort_order
       FROM wrap_colors WHERE is_active = 1 ORDER BY sort_order`).all(),
-    wrapOptions: db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.sort_order,
+    wrapOptions: db.prepare(`SELECT o.id, o.display_name, o.preview_swatch, o.preview_asset, o.sort_order,
         c.id AS color_id, c.code AS color_code, c.display_name AS color_name, c.hex, c.family,
         f.id AS finish_id, f.code AS finish_code, f.display_name AS finish_name
       FROM wrap_options o JOIN wrap_colors c ON c.id = o.color_id JOIN wrap_finishes f ON f.id = o.finish_id
       WHERE o.is_active = 1 AND c.is_active = 1 AND f.is_active = 1 ORDER BY o.sort_order`).all(),
-    wheelColors: db.prepare(`SELECT id, code, display_name, preview_swatch, finish_code, sort_order
+    wheelColors: db.prepare(`SELECT id, code, display_name, preview_swatch, preview_asset, finish_code, sort_order
       FROM wheel_color_options WHERE is_active = 1 ORDER BY sort_order`).all(),
   };
 }

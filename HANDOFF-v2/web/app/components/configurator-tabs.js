@@ -1,12 +1,18 @@
-export function WrapTab({ draft, catalog, family, onFamily, onSelect }) {
+export function WrapTab({ draft, catalog, family, finish, onFamily, onFinish, onSelect }) {
   const families = [...new Set(catalog.wrapColors.map((color) => color.family))];
-  const options = catalog.wrapOptions.filter((option) => !family || option.family === family);
-  return <section aria-label="Wrap settings">
+  const finishes = catalog.wrapFinishes.filter((item) => catalog.wrapOptions.some((option) => option.finish_code === item.code));
+  const options = catalog.wrapOptions.filter((option) => (!family || option.family === family) && (!finish || option.finish_code === finish));
+  return <section className="wrapCatalog" aria-label="Wrap settings">
+    <div className="wrapCatalogIntro"><div><span>VEHICLE WRAP</span><strong>Material catalog</strong></div><small>{options.length} options</small></div>
     <p className="fieldLabel">Color family</p>
-    <div className="filterPills"><button type="button" className={!family ? 'active' : ''} onClick={() => onFamily('')}>All</button>{families.map((item) => <button type="button" key={item} className={family === item ? 'active' : ''} onClick={() => onFamily(item)}>{item}</button>)}</div>
-    <p className="fieldLabel spaced">Color & finish</p>
-    <div className="catalogSwatches">{options.map((option) => <button key={option.id} type="button" className={draft.wrap?.optionId === option.id ? 'catalogSwatch active' : 'catalogSwatch'} onClick={() => onSelect(option)}>
-      <span style={{ background: option.hex }} /><strong>{option.color_name}</strong><small>{option.finish_name}</small>
+    <div className="filterPills wrapFamilyPills"><button type="button" className={!family ? 'active' : ''} onClick={() => onFamily('')}>All colors</button>{families.map((item) => <button type="button" key={item} className={family === item ? 'active' : ''} onClick={() => onFamily(item)}>{item}</button>)}</div>
+    <p className="fieldLabel spaced">Surface</p>
+    <div className="filterPills wrapFinishPills"><button type="button" className={!finish ? 'active' : ''} onClick={() => onFinish('')}>All finishes</button>{finishes.map((item) => <button type="button" key={item.code} className={finish === item.code ? 'active' : ''} onClick={() => onFinish(item.code)}>{item.display_name}</button>)}</div>
+    <div className="wrapResults"><span>Color & finish</span><span>{options.length} shown</span></div>
+    <div className="wrapGrid">{options.map((option) => <button key={option.id} type="button" aria-pressed={draft.wrap?.optionId === option.id} className={draft.wrap?.optionId === option.id ? 'wrapCard active' : 'wrapCard'} onClick={() => onSelect(option)}>
+      <span className="wrapCardMedia">{option.preview_asset ? <img src={option.preview_asset} alt={`${option.color_name} ${option.finish_name} automotive vinyl`} loading="lazy" /> : <span style={{ background: option.hex }} />}</span>
+      <span className="wrapCardMeta"><strong>{option.color_name}</strong><small>{option.finish_name}</small></span>
+      <span className="wrapColorDot" style={{ background: option.hex }} aria-hidden="true" />
     </button>)}</div>
   </section>;
 }
@@ -24,9 +30,13 @@ export function TintTab({ draft, catalog, onZone, onLevel }) {
 }
 
 export function WheelColorTab({ draft, options, onSelect }) {
-  return <section aria-label="Wheel color settings"><p className="fieldLabel">Recolor current wheels</p>
-    <div className="catalogSwatches">{options.map((option) => <button key={option.id} type="button" className={draft.wheel?.optionId === option.id ? 'catalogSwatch active' : 'catalogSwatch'} onClick={() => onSelect(option)}>
-      <span style={{ background: option.preview_swatch }} /><strong>{option.display_name.split(' · ')[0]}</strong><small>{option.display_name.split(' · ')[1] || option.finish_code}</small>
+  return <section className="wheelFinishCatalog" aria-label="Wheel color settings">
+    <div className="wrapCatalogIntro"><div><span>WHEEL FINISH</span><strong>Real finish preview</strong></div><small>{options.length} finishes</small></div>
+    <p className="wheelFinishHint">The wheel design stays the same. Only its coating changes.</p>
+    <div className="wheelFinishGrid">{options.map((option) => <button key={option.id} type="button" aria-pressed={draft.wheel?.optionId === option.id} className={draft.wheel?.optionId === option.id ? 'wheelFinishCard active' : 'wheelFinishCard'} onClick={() => onSelect(option)}>
+      <span className="wheelFinishMedia"><img src={option.preview_asset} alt={`${option.display_name} wheel finish`} loading="lazy" /></span>
+      <span className="wrapCardMeta"><strong>{option.display_name.split(' · ')[0]}</strong><small>{option.display_name.split(' · ')[1] || option.finish_code}</small></span>
+      <span className="wrapColorDot" style={{ background: option.preview_swatch }} aria-hidden="true" />
     </button>)}</div>
   </section>;
 }
